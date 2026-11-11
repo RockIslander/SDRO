@@ -1,0 +1,131 @@
+name: Debian package
+
+# A downloadable .deb without going near the release page: run this from
+# Actions -> Debian package -> Run workflow and take the package from the run's
+# Artifacts section. Nothing is published — no tag, no release, no commit — so
+# it can be built from any branch, including one whose changes are not merged.
+#
+# The environment is release.yml's `linux-x86_64-compat` one: the same pinned
+# Ubuntu 22.04 container and Rust toolchain, so the package links glibc 2.35 and
+# installs on the stable/LTS distributions the regular Linux build refuses
+# ("version `GLIBC_2.39' not found"). It is the standard (no-SoapySDR) variant,
+# which is what [package.metadata.deb] in Cargo.toml describes and the one an
+# `apt install` user wants; the SoapySDR build stays on the release page.
+#
+# Keep the container digest, trunk version and toolchain in step with
+# release.yml and packaging/rebuild-release.sh: this is the same build, with the
+# packaging step stopping at the .deb. The web client is built here rather than
+# fetched from the `web` job because a workflow_dispatch package run should not
+# wait on the release matrix.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # audiopus_sys bundles a libopus whose CMakeLists predates CMake 3.5; the
+  # CMake in the container refuses to configure it without this override.
+  CMAKE_POLICY_VERSION_MINIMUM: "3.5"
+  RUST_TOOLCHAIN: "1.98.1"
+
+jobs:
+  deb:
+    name: sdroxide .deb (linux-x86_64-compat)
+    runs-on: ubuntu-latest
+    # The release's -compat image, by digest: `ubuntu:22.04` is re-pushed every
+    # few weeks, and a different base is a different package.
+    container: ubuntu:22.04@sha256:b8b6ee6aa931ecd9d0d952abc34dc0e5f7c6a30c6bb71b079fe399fde0329c02
+    defaults:
+      run:
+        shell: bash
+    steps:
+      # The container starts from a bare image, so git has to be in place
+      # before checkout: without it actions/checkout falls back to the REST
+      # API download, which cannot fetch the vendor/ submodules.
+      - name: Install git (compat container)
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git ca-certificates
+
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      # From the script rather than inline, so this builds with exactly what
+      # the release and reproducible.yml do.
+      - name: Install build environment
+        run: packaging/linux/install-compat-deps.sh
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: linux-x86_64-compat-deb
+
+      - name: Reproducible build settings
+        run: packaging/reproducible-env.sh >> "$GITHUB_ENV"
+
+      - name: Install trunk
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL https://github.com/trunk-rs/trunk/releases/download/v0.21.14/trunk-x86_64-unknown-linux-gnu.tar.gz \
+            | tar -xzf - -C "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # The embed-web feature bakes this dist into the binary, which is what
+      # makes the .deb's `sdroxide --server` useful with nothing else installed.
+      - name: Build web client
+        working-directory: crates/sdroxide-web
+        run: trunk build --release
+
+      - name: Compute version
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            RELEASE_VERSION="$GITHUB_REF_NAME"
+          else
+            RELEASE_VERSION="dev-${GITHUB_SHA::7}"
+          fi
+          CARGO_VERSION=$(sed -n 's/^version *= *"\([^"]*\)".*/\1/p' Cargo.toml | head -n1)
+          {
+            echo "RELEASE_VERSION=$RELEASE_VERSION"
+            echo "CARGO_VERSION=$CARGO_VERSION"
+            echo "PKG=sdroxide-$RELEASE_VERSION-linux-x86_64-compat"
+          } >> "$GITHUB_ENV"
+          {
+            echo "### sdroxide $CARGO_VERSION ($RELEASE_VERSION)"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The same build as the release's standard variant: CAT/HPSDR/TCI and the
+      # native USB drivers, no SoapySDR, with rtl_433 and the web client in.
+      - name: Build
+        run: cargo build --release --locked -p sdroxide --no-default-features --features embed-web,rtl433
+
+      - name: Package .deb
+        run: |
+          strip target/release/sdroxide
+          mkdir -p out
+          # Pinned for the same reason as the compiler; it takes its file times
+          # from SOURCE_DATE_EPOCH.
+          cargo install cargo-deb --locked --version 3.8.0
+          # --no-build: the binary above is the one packaged. The metadata in
+          # Cargo.toml supplies the udev rules, desktop entry, icons, voices,
+          # notices and README, and dpkg-shlibdeps computes Depends.
+          cargo deb --no-build -p sdroxide -o "out/$PKG.deb"
+          (cd out && sha256sum -- *.deb > SHA256SUMS && cat SHA256SUMS)
+          echo
+          dpkg-deb -I "out/$PKG.deb" | sed -n '2,12p' >> "$GITHUB_STEP_SUMMARY"
+
+      # Downloadable from the run page; nothing is published.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ env.PKG }}
+          path: out/*
+          if-no-files-found: error

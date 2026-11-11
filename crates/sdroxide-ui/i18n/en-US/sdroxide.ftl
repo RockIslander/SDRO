@@ -34,6 +34,11 @@ ui-theme-dracula = Dracula
 ui-theme-catppuccin-mocha = Catppuccin mocha
 ui-theme-catppuccin-latte = Catppuccin latte
 ui-theme-modern-minimalist = Modern minimalist
+ui-theme-tokyo-night = Tokyo night
+ui-theme-one-dark = One dark
+ui-theme-kanagawa = Kanagawa
+ui-theme-rose-pine = Rosé Pine
+ui-theme-rose-pine-dawn = Rosé Pine Dawn
 
 chrome-style-angled = Angled
 chrome-style-rectangular = Rectangular

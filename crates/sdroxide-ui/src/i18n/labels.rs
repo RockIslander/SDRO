@@ -63,6 +63,11 @@ impl Tr for UiTheme {
             UiTheme::CatppuccinMocha => tr!("ui-theme-catppuccin-mocha"),
             UiTheme::CatppuccinLatte => tr!("ui-theme-catppuccin-latte"),
             UiTheme::ModernMinimalist => tr!("ui-theme-modern-minimalist"),
+            UiTheme::TokyoNight => tr!("ui-theme-tokyo-night"),
+            UiTheme::OneDark => tr!("ui-theme-one-dark"),
+            UiTheme::Kanagawa => tr!("ui-theme-kanagawa"),
+            UiTheme::RosePine => tr!("ui-theme-rose-pine"),
+            UiTheme::RosePineDawn => tr!("ui-theme-rose-pine-dawn"),
         }
     }
 }

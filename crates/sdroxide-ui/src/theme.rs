@@ -828,8 +828,199 @@ const MODERN_MINIMALIST: Palette = Palette {
     hazard_dark: c(0x161204),
 };
 
+/// Tokyo Night: the indigo-blue "Storm" grounds of the popular editor theme,
+/// with its neon cyan as the primary accent, blue-violet chrome and a warm
+/// amber warning tone.
+const TOKYO_NIGHT: Palette = Palette {
+    light: false,
+    no_dim: false,
+    bg_deep: c(0x13131b),
+    panel: c(0x1a1b26),
+    input_bg: c(0x13131b),
+    fill: c(0x24283b),
+    fill_hover: c(0x2f334d),
+    fill_active: c(0x3b4261),
+    line: c(0x2a2f45),
+    line_lit: c(0x545c7e),
+    text: c(0xa9b1d6),
+    text_strong: c(0xc0caf5),
+    cyan: c(0x7dcfff),
+    cyan_dim: c(0x7aa2f7),
+    pink: c(0xbb9af7),
+    yellow: c(0xe0af68),
+    green: c(0x9ece6a),
+    ink_on_cyan: c(0x16161e),
+    ink_on_bright: Color32::BLACK,
+    red_deep: c(0x6b2638),
+    cq_bg: c(0x2b1b2c),
+    tome_bg: c(0x2e2712),
+    done_bg: c(0x182c1d),
+    row_bg: c(0x16171f),
+    row_hover: c(0x24283b),
+    scroll_track: c(0x1a1c27),
+    scroll_handle: c(0x3d59a1),
+    scroll_handle_hover: c(0x7dcfff),
+    scroll_handle_drag: c(0xbb9af7),
+    faint_bg: c(0x1a1c27),
+    alert: c(0xff5370),
+    hazard: c(0xe0af68),
+    hazard_dark: c(0x1a1608),
+};
+
+/// One Dark: the Atom/VS Code palette — a graphite ground, blue accents,
+/// mauve chrome and the familiar soft green and yellow.
+const ONE_DARK: Palette = Palette {
+    light: false,
+    no_dim: false,
+    bg_deep: c(0x1b1d23),
+    panel: c(0x282c34),
+    input_bg: c(0x21252b),
+    fill: c(0x313640),
+    fill_hover: c(0x3a4049),
+    fill_active: c(0x444b55),
+    line: c(0x353a44),
+    line_lit: c(0x4b5263),
+    text: c(0xabb2bf),
+    text_strong: c(0xdcdfe4),
+    cyan: c(0x61afef),
+    cyan_dim: c(0x7fa6d9),
+    pink: c(0xc678dd),
+    yellow: c(0xe5c07b),
+    green: c(0x98c379),
+    ink_on_cyan: c(0x22262d),
+    ink_on_bright: Color32::BLACK,
+    red_deep: c(0x5c2430),
+    cq_bg: c(0x3a2630),
+    tome_bg: c(0x3a3320),
+    done_bg: c(0x232f22),
+    row_bg: c(0x22262e),
+    row_hover: c(0x2f343d),
+    scroll_track: c(0x23272f),
+    scroll_handle: c(0x4b5263),
+    scroll_handle_hover: c(0x61afef),
+    scroll_handle_drag: c(0xc678dd),
+    faint_bg: c(0x23272f),
+    alert: c(0xff4d5e),
+    hazard: c(0xe5c07b),
+    hazard_dark: c(0x1a1708),
+};
+
+/// Kanagawa: the sumi-ink grounds of the Japanese-inspired theme, with its
+/// crystal-blue and wave-teal accents, sakura chrome and old-paper text.
+const KANAGAWA: Palette = Palette {
+    light: false,
+    no_dim: false,
+    bg_deep: c(0x16161d),
+    panel: c(0x1f1f28),
+    input_bg: c(0x181820),
+    fill: c(0x2a2a37),
+    fill_hover: c(0x363646),
+    fill_active: c(0x45455a),
+    line: c(0x2d2d3a),
+    line_lit: c(0x54546d),
+    text: c(0xc8c093),
+    text_strong: c(0xdcd7ba),
+    cyan: c(0x7e9cd8),
+    cyan_dim: c(0x7fb4ca),
+    pink: c(0xd27e99),
+    yellow: c(0xe6c384),
+    green: c(0x98bb6c),
+    ink_on_cyan: c(0x16161d),
+    ink_on_bright: Color32::BLACK,
+    red_deep: c(0x5a2630),
+    cq_bg: c(0x2d1f2a),
+    tome_bg: c(0x2d2a1a),
+    done_bg: c(0x1d2a20),
+    row_bg: c(0x1b1b23),
+    row_hover: c(0x2a2a35),
+    scroll_track: c(0x191921),
+    scroll_handle: c(0x4f7192),
+    scroll_handle_hover: c(0x7e9cd8),
+    scroll_handle_drag: c(0xd27e99),
+    faint_bg: c(0x191921),
+    alert: c(0xff4a52),
+    hazard: c(0xe6c384),
+    hazard_dark: c(0x1a1708),
+};
+
+/// Rosé Pine: the deep plum "main" ground with its iris and foam accents and
+/// a rose chrome.
+const ROSE_PINE: Palette = Palette {
+    light: false,
+    no_dim: false,
+    bg_deep: c(0x191724),
+    panel: c(0x1f1d2e),
+    input_bg: c(0x16141f),
+    fill: c(0x26233a),
+    fill_hover: c(0x302c47),
+    fill_active: c(0x3b3655),
+    line: c(0x2b2840),
+    line_lit: c(0x524f67),
+    text: c(0xe0def4),
+    text_strong: c(0xf4f2ff),
+    cyan: c(0xc4a7e7),
+    cyan_dim: c(0x9ccfd8),
+    pink: c(0xeb6f92),
+    yellow: c(0xf6c177),
+    green: c(0x9cd6b4),
+    ink_on_cyan: c(0x191724),
+    ink_on_bright: Color32::BLACK,
+    red_deep: c(0x6b2c3d),
+    cq_bg: c(0x341f2b),
+    tome_bg: c(0x332c1b),
+    done_bg: c(0x1f2f2a),
+    row_bg: c(0x1b1928),
+    row_hover: c(0x292640),
+    scroll_track: c(0x1a1826),
+    scroll_handle: c(0x6e6a86),
+    scroll_handle_hover: c(0xc4a7e7),
+    scroll_handle_drag: c(0xeb6f92),
+    faint_bg: c(0x1a1826),
+    alert: c(0xff5670),
+    hazard: c(0xf6c177),
+    hazard_dark: c(0x1a1708),
+};
+
+/// Rosé Pine Dawn: the same family on paper — warm cream panels with every
+/// accent taken down until it reads as ink on them.
+const ROSE_PINE_DAWN: Palette = Palette {
+    light: true,
+    no_dim: false,
+    bg_deep: c(0xf2e9e1),
+    panel: c(0xfffaf3),
+    input_bg: c(0xf4ede8),
+    fill: c(0xf4ece4),
+    fill_hover: c(0xece2da),
+    fill_active: c(0xe2d8cf),
+    line: c(0xddd3ca),
+    line_lit: c(0x8c869c),
+    text: c(0x575279),
+    text_strong: c(0x26233a),
+    cyan: c(0x286983),
+    cyan_dim: c(0x3a7381),
+    pink: c(0xa24a63),
+    yellow: c(0x8a5a12),
+    green: c(0x4d7c0f),
+    ink_on_cyan: c(0xffffff),
+    ink_on_bright: c(0xffffff),
+    red_deep: c(0xa8324e),
+    cq_bg: c(0xfbe4ea),
+    tome_bg: c(0xf8edd6),
+    done_bg: c(0xe7f2e2),
+    row_bg: c(0xfdf8f1),
+    row_hover: c(0xf3eae2),
+    scroll_track: c(0xf2e9e1),
+    scroll_handle: c(0x8c869c),
+    scroll_handle_hover: c(0x286983),
+    scroll_handle_drag: c(0xa24a63),
+    faint_bg: c(0xf7f0e9),
+    alert: c(0xc02040),
+    hazard: c(0xffd23f),
+    hazard_dark: c(0x161204),
+};
+
 /// Indexed by [`theme_index`].
-static PALETTES: [Palette; 17] = [
+static PALETTES: [Palette; 22] = [
     DEFAULT,           // 0  Default
     GREEN_PHOSPHOR,    // 1  Green phosphor
     AMBER_PHOSPHOR,    // 2  Amber phosphor
@@ -847,6 +1038,11 @@ static PALETTES: [Palette; 17] = [
     MODERN_MINIMALIST, // 14 Modern minimalist
     LIGHT,             // 15 Light
     HIGH_CONTRAST,     // 16 High contrast
+    TOKYO_NIGHT,       // 17 Tokyo night
+    ONE_DARK,          // 18 One dark
+    KANAGAWA,          // 19 Kanagawa
+    ROSE_PINE,         // 20 Rosé Pine
+    ROSE_PINE_DAWN,    // 21 Rosé Pine Dawn
 ];
 
 /// The S-meter instrument's colours: the face wash, the backlight bloom, the
@@ -1155,7 +1351,7 @@ const fn meter_paper(p: &Palette) -> MeterPalette {
 /// Indexed by [`theme_index`], like [`PALETTES`]. Rainbow keeps the historic
 /// navy instrument: its grounds are the default's, and the meter already
 /// reads in the accents the ramps give it.
-static METER_PALETTES: [MeterPalette; 17] = [
+static METER_PALETTES: [MeterPalette; 22] = [
     METER_DEFAULT,                   // 0  Default
     METER_GREEN,                     // 1  Green phosphor
     METER_AMBER,                     // 2  Amber phosphor
@@ -1173,6 +1369,11 @@ static METER_PALETTES: [MeterPalette; 17] = [
     meter_paper(&MODERN_MINIMALIST), // 14 Modern minimalist
     METER_LIGHT,                     // 15 Light
     METER_HIGH_CONTRAST,             // 16 High contrast
+    meter_from(&TOKYO_NIGHT),        // 17 Tokyo night
+    meter_from(&ONE_DARK),           // 18 One dark
+    meter_from(&KANAGAWA),           // 19 Kanagawa
+    meter_from(&ROSE_PINE),          // 20 Rosé Pine
+    meter_paper(&ROSE_PINE_DAWN),    // 21 Rosé Pine Dawn
 ];
 
 /// The current theme's S-meter instrument colours.
@@ -1276,7 +1477,7 @@ const fn scope_light_from(p: &Palette) -> ScopePalette {
 /// Indexed by [`theme_index`], like [`PALETTES`]. High contrast lends the
 /// instruments its own roles like any other dark theme — its accents were
 /// already picked to sit on black, which is what the glass is.
-static SCOPE_PALETTES: [ScopePalette; 17] = [
+static SCOPE_PALETTES: [ScopePalette; 22] = [
     scope_from(&DEFAULT),                 // 0  Default
     scope_from(&GREEN_PHOSPHOR),          // 1  Green phosphor
     scope_from(&AMBER_PHOSPHOR),          // 2  Amber phosphor
@@ -1294,6 +1495,11 @@ static SCOPE_PALETTES: [ScopePalette; 17] = [
     scope_light_from(&MODERN_MINIMALIST), // 14 Modern minimalist
     SCOPE_LIGHT,                          // 15 Light
     scope_from(&HIGH_CONTRAST),           // 16 High contrast
+    scope_from(&TOKYO_NIGHT),             // 17 Tokyo night
+    scope_from(&ONE_DARK),                // 18 One dark
+    scope_from(&KANAGAWA),                // 19 Kanagawa
+    scope_from(&ROSE_PINE),               // 20 Rosé Pine
+    scope_light_from(&ROSE_PINE_DAWN),    // 21 Rosé Pine Dawn
 ];
 
 /// The current theme's instrument inks — see [`ScopePalette`].
@@ -1460,7 +1666,7 @@ const fn map_light_from(p: &Palette) -> MapPalette {
 }
 
 /// Indexed by [`theme_index`], like [`PALETTES`].
-static MAP_PALETTES: [MapPalette; 17] = [
+static MAP_PALETTES: [MapPalette; 22] = [
     map_from(&DEFAULT),                 // 0  Default
     map_from(&GREEN_PHOSPHOR),          // 1  Green phosphor
     map_from(&AMBER_PHOSPHOR),          // 2  Amber phosphor
@@ -1478,6 +1684,11 @@ static MAP_PALETTES: [MapPalette; 17] = [
     map_light_from(&MODERN_MINIMALIST), // 14 Modern minimalist
     SCOPE_MAP_LIGHT,                    // 15 Light
     MAP_HIGH_CONTRAST,                  // 16 High contrast
+    map_from(&TOKYO_NIGHT),             // 17 Tokyo night
+    map_from(&ONE_DARK),                // 18 One dark
+    map_from(&KANAGAWA),                // 19 Kanagawa
+    map_from(&ROSE_PINE),               // 20 Rosé Pine
+    map_light_from(&ROSE_PINE_DAWN),    // 21 Rosé Pine Dawn
 ];
 
 /// The current theme's world-map inks — see [`MapPalette`].
@@ -1515,6 +1726,11 @@ const fn theme_index(t: UiTheme) -> u8 {
         UiTheme::ModernMinimalist => 14,
         UiTheme::Light => 15,
         UiTheme::HighContrast => 16,
+        UiTheme::TokyoNight => 17,
+        UiTheme::OneDark => 18,
+        UiTheme::Kanagawa => 19,
+        UiTheme::RosePine => 20,
+        UiTheme::RosePineDawn => 21,
     }
 }
 

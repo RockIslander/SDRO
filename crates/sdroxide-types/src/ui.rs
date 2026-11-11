@@ -338,6 +338,18 @@ pub enum UiTheme {
     /// faint. For low vision, for glare, and for a display that has lost its
     /// contrast.
     HighContrast,
+    /// Tokyo Night: indigo-blue grounds, neon-cyan accents and blue-violet
+    /// chrome, after the editor theme of the same name.
+    TokyoNight,
+    /// One Dark: the Atom/VS Code graphite-and-blue palette.
+    OneDark,
+    /// Kanagawa: sumi-ink grounds, crystal-blue accents and old-paper text.
+    Kanagawa,
+    /// Rosé Pine: deep plum grounds with iris and foam accents and a rose
+    /// chrome.
+    RosePine,
+    /// Rosé Pine Dawn: the same family on warm cream paper.
+    RosePineDawn,
     /// The classic navy/cyan/pink look. Declared last because serde demands
     /// the catch-all be the final variant: it also swallows an unrecognised
     /// value in a hand-edited config, so a typo degrades to the default theme
@@ -348,7 +360,7 @@ pub enum UiTheme {
 }
 
 impl UiTheme {
-    pub const ALL: [UiTheme; 17] = [
+    pub const ALL: [UiTheme; 22] = [
         UiTheme::Default,
         UiTheme::Light,
         UiTheme::HighContrast,
@@ -366,6 +378,11 @@ impl UiTheme {
         UiTheme::CatppuccinMocha,
         UiTheme::CatppuccinLatte,
         UiTheme::ModernMinimalist,
+        UiTheme::TokyoNight,
+        UiTheme::OneDark,
+        UiTheme::Kanagawa,
+        UiTheme::RosePine,
+        UiTheme::RosePineDawn,
     ];
 
     pub fn label(self) -> &'static str {
@@ -387,6 +404,11 @@ impl UiTheme {
             UiTheme::CatppuccinMocha => "Catppuccin mocha",
             UiTheme::CatppuccinLatte => "Catppuccin latte",
             UiTheme::ModernMinimalist => "Modern minimalist",
+            UiTheme::TokyoNight => "Tokyo night",
+            UiTheme::OneDark => "One dark",
+            UiTheme::Kanagawa => "Kanagawa",
+            UiTheme::RosePine => "Rosé Pine",
+            UiTheme::RosePineDawn => "Rosé Pine Dawn",
         }
     }
 }

@@ -524,7 +524,7 @@ OpusCodec::OpusCodec() :
 	if (hOpusLib == nullptr)
 	{
 		hOpusLib = CLibraryLoader::Load(LibNames, LibFuncs);
-#ifndef SDROXIDE_QUIET
+#ifndef SDRO_QUIET
 		if (!hOpusLib)
 			cerr << "No usable Opus library found" << endl;
 		else

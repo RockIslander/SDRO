@@ -1,7 +1,0 @@
-# Read by the `fl!` macro at compile time to find the English messages every
-# id is checked against. See `src/i18n.rs`.
-fallback_language = "en-US"
-
-[fluent]
-assets_dir = "i18n"
-domain = "sdroxide"

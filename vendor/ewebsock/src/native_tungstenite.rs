@@ -225,7 +225,7 @@ pub fn ws_connect_blocking(
 /// `connect_with_config`, unless [`Options::tls_config`] asks for a TLS
 /// configuration of the caller's.
 ///
-/// Added by sdroxide's patch. Without a configuration this is exactly the
+/// Added by sdro's patch. Without a configuration this is exactly the
 /// upstream call, so a connection that does not ask for one is untouched.
 fn connect(
     uri: tungstenite::http::Uri,
@@ -343,7 +343,7 @@ const MAX_PENDING_IN_A_ROW: u32 = 1000;
 /// timed out. Rust has no `ErrorKind` for that, so it arrives here
 /// uncategorised and used to end the connection: a long-lived socket polled a
 /// hundred times a second runs for tens of minutes and then dies of it, which
-/// is what sdroxide's remote clients saw as `read: IO error: An overlapping
+/// is what sdro's remote clients saw as `read: IO error: An overlapping
 /// I/O operation is in progress.. (os error 997)`. Nothing has failed and the
 /// socket reads normally on the next attempt.
 fn is_read_timeout(io_err: &std::io::Error) -> bool {

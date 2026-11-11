@@ -14,9 +14,9 @@
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use sdroxide_radio::{Complex32, ControlUpdate, IqSource, Result};
-use sdroxide_smartsdr::{FlexHandle, FlexUpdate};
-use sdroxide_types::TxTelemetry;
+use sdro_radio::{Complex32, ControlUpdate, IqSource, Result};
+use sdro_smartsdr::{FlexHandle, FlexUpdate};
+use sdro_types::TxTelemetry;
 
 use crate::session_trace::TraceStore;
 
@@ -31,7 +31,7 @@ static TRACES: TraceStore = TraceStore::new();
 /// The engine reconnects a dead source on its own ([`IqSource::needs_reopen`]),
 /// and reconnecting under the id we were just evicted over does not recover the
 /// session — it evicts whoever took it, who reconnects and evicts us back. Two
-/// sdroxide windows, or one that overlapped its own reconnect, then trade the
+/// sdro windows, or one that overlapped its own reconnect, then trade the
 /// radio forever at a few seconds a turn.
 ///
 /// So the eviction is remembered for the life of the process and the next
@@ -53,11 +53,11 @@ fn remember_eviction(key: &str) {
 
 /// Which FlexRadio a session was with: the address it was dialled at, the one
 /// thing both the source and the tab asking for the report can spell.
-fn session_key(cfg: &sdroxide_types::SmartSdrConfig) -> String {
+fn session_key(cfg: &sdro_types::SmartSdrConfig) -> String {
     cfg.target().unwrap_or("").trim().to_ascii_lowercase()
 }
 
-fn record_trace(key: &str, trace: &sdroxide_smartsdr::Trace) {
+fn record_trace(key: &str, trace: &sdro_smartsdr::Trace) {
     TRACES.record(key, trace.dump());
 }
 
@@ -75,23 +75,23 @@ pub struct SmartSdrSource {
     /// meter poll. Cleared on unkey.
     last_telem: Option<TxTelemetry>,
     /// Kept so the trace survives the handle being dropped.
-    trace: sdroxide_smartsdr::Trace,
+    trace: sdro_smartsdr::Trace,
     /// Warning captured while opening, surfaced in the UI.
     warning: Option<String>,
     /// Conjugate what the radio sends, mirroring the spectrum — see
-    /// [`sdroxide_types::SmartSdrConfig::swap_iq`].
+    /// [`sdro_types::SmartSdrConfig::swap_iq`].
     swap_iq: bool,
     /// The rate asked for, which is what [`IqSource::sample_rate`] answers until
     /// the radio has sent a packet to say otherwise.
     requested_rate: f64,
     /// The radio's built-in antenna tuner as it last reported itself, or
     /// `None` where it has none (or has not said yet).
-    atu: Option<sdroxide_types::AtuState>,
+    atu: Option<sdro_types::AtuState>,
 }
 
 impl SmartSdrSource {
     pub fn open(
-        cfg: &sdroxide_types::SmartSdrConfig,
+        cfg: &sdro_types::SmartSdrConfig,
         center_hz: f64,
     ) -> anyhow::Result<SmartSdrSource> {
         let address = cfg
@@ -105,7 +105,7 @@ impl SmartSdrSource {
             .to_string();
 
         let key = session_key(cfg);
-        let mut handle = FlexHandle::connect_with(&sdroxide_smartsdr::ConnectOptions {
+        let mut handle = FlexHandle::connect_with(&sdro_smartsdr::ConnectOptions {
             address: address.clone(),
             iq_rate_hz: cfg.iq_sample_rate_hz,
             iq_channel: cfg.iq_channel,
@@ -134,7 +134,7 @@ impl SmartSdrSource {
                  reports the stream as running, so the control link is fine and its \
                  spectrum — which travels by UDP — is being blocked before it reaches \
                  here. Check this computer's firewall first: SmartSDR installs a rule for \
-                 itself and sdroxide has none. Then a VPN, then the Network MTU setting."
+                 itself and sdro has none. Then a VPN, then the Network MTU setting."
             ));
             tracing::warn!(target: "smartsdr", "{}", warning.as_deref().unwrap_or(""));
         } else if (actual - cfg.iq_sample_rate_hz).abs() > 1.0 {
@@ -277,7 +277,7 @@ impl IqSource for SmartSdrSource {
         self.warning.clone()
     }
 
-    fn set_control_mode(&mut self, mode: sdroxide_types::Mode) -> Result<()> {
+    fn set_control_mode(&mut self, mode: sdro_types::Mode) -> Result<()> {
         self.handle.set_mode(mode);
         Ok(())
     }
@@ -302,7 +302,7 @@ impl IqSource for SmartSdrSource {
         out
     }
 
-    fn atu(&self) -> Option<sdroxide_types::AtuState> {
+    fn atu(&self) -> Option<sdro_types::AtuState> {
         self.atu
     }
 
@@ -405,10 +405,10 @@ impl IqSource for SmartSdrSource {
 }
 
 /// Discover FlexRadios and map them to the settings UI's device type.
-pub fn discover() -> Vec<sdroxide_types::SmartSdrDevice> {
-    sdroxide_smartsdr::discover_default()
+pub fn discover() -> Vec<sdro_types::SmartSdrDevice> {
+    sdro_smartsdr::discover_default()
         .into_iter()
-        .map(|r| sdroxide_types::SmartSdrDevice {
+        .map(|r| sdro_types::SmartSdrDevice {
             joinable: r.joinable(),
             ip: r.ip,
             port: r.port,
@@ -423,13 +423,13 @@ pub fn discover() -> Vec<sdroxide_types::SmartSdrDevice> {
 
 /// Shared with the settings UI's "Copy diagnostic report" button: the trace of
 /// the radio *this* configuration names, never another one's.
-pub fn diagnostics_or_hint(cfg: &sdroxide_types::SmartSdrConfig) -> String {
+pub fn diagnostics_or_hint(cfg: &sdro_types::SmartSdrConfig) -> String {
     match TRACES.get(&session_key(cfg)) {
-        Some(t) => format!("{t}\n{}\n", sdroxide_smartsdr::FIELD_REPORT_HINT),
+        Some(t) => format!("{t}\n{}\n", sdro_smartsdr::FIELD_REPORT_HINT),
         None => format!(
             "No SmartSDR session has run yet for {} — connect to that radio first.\n\n{}\n",
             cfg.target().unwrap_or("this radio"),
-            sdroxide_smartsdr::FIELD_REPORT_HINT
+            sdro_smartsdr::FIELD_REPORT_HINT
         ),
     }
 }
@@ -437,7 +437,7 @@ pub fn diagnostics_or_hint(cfg: &sdroxide_types::SmartSdrConfig) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdroxide_smartsdr::sim::{SimConfig, SimRadio};
+    use sdro_smartsdr::sim::{SimConfig, SimRadio};
 
     /// The source settles on the rate the radio *ends up* streaming, not on the
     /// 48 kHz every DAX IQ stream starts at. The engine reads `sample_rate` once
@@ -452,7 +452,7 @@ mod tests {
             ..SimConfig::default()
         })
         .expect("start simulator");
-        let cfg = sdroxide_types::SmartSdrConfig {
+        let cfg = sdro_types::SmartSdrConfig {
             address: sim.address(),
             iq_sample_rate_hz: 192_000.0,
             station: "test".into(),

@@ -2,24 +2,24 @@
 """Draw the packaged APRS station icons.
 
 Every APRS station says what it *is* in two characters, and a map draws an
-icon from that pair. sdroxide ships those icons rather than fetching them, for
+icon from that pair. sdro ships those icons rather than fetching them, for
 the same reason it ships the country flags: a map that only shows what stations
 are once some third party's CDN answers is a map that looks different on every
-machine, and the browser client has no business reaching past sdroxide for one.
+machine, and the browser client has no business reaching past sdro for one.
 
 They are drawn here rather than sourced from an existing icon set, so there is
 no third-party artwork in the tree and no licence attached to it. This writes:
 
-  * `crates/sdroxide-ui/assets/aprs/<kind>.png` — one 48x48 white-on-transparent
-    image per `sdroxide_types::AprsSymbolKind`, drawn at 4x and downsampled, so
+  * `crates/sdro-ui/assets/aprs/<kind>.png` — one 48x48 white-on-transparent
+    image per `sdro_types::AprsSymbolKind`, drawn at 4x and downsampled, so
     the edges are properly antialiased. White so the panel can tint them: the
     map colours a station by how recently it was heard.
-  * `crates/sdroxide-ui/src/aprs_icons.rs` — the `include_bytes!` table.
+  * `crates/sdro-ui/src/aprs_icons.rs` — the `include_bytes!` table.
 
     ./tools/gen_aprs_icons.py
     ./tools/gen_aprs_icons.py --sheet /tmp/sheet.png   # a contact sheet to look at
 
-The kind list has to match the enum in `crates/sdroxide-types/src/aprs.rs`; the
+The kind list has to match the enum in `crates/sdro-types/src/aprs.rs`; the
 script reads it from there and fails if this file has drifted from it.
 
 Coordinates are in a 0..1 box, x right and y down.
@@ -35,9 +35,9 @@ import sys
 from PIL import Image, ImageDraw
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-ENUM = ROOT / "crates/sdroxide-types/src/aprs.rs"
-OUT_DIR = ROOT / "crates/sdroxide-ui/assets/aprs"
-OUT_RS = ROOT / "crates/sdroxide-ui/src/aprs_icons.rs"
+ENUM = ROOT / "crates/sdro-types/src/aprs.rs"
+OUT_DIR = ROOT / "crates/sdro-ui/assets/aprs"
+OUT_RS = ROOT / "crates/sdro-ui/src/aprs_icons.rs"
 
 SIZE = 48
 SUPER = 4
@@ -543,7 +543,7 @@ def main():
 //! They are compiled in rather than fetched, for the reason the country flags
 //! are: a map that only shows what stations *are* once some third party's CDN
 //! answers is a map that looks different on every machine, and the browser
-//! client has no business reaching past sdroxide for one. Drawn rather than
+//! client has no business reaching past sdro for one. Drawn rather than
 //! sourced, so there is no third-party artwork in the tree.
 //!
 //! White on transparent, so the caller supplies the colour — the map fades a
@@ -552,7 +552,7 @@ def main():
 use std::collections::HashMap;
 
 use eframe::egui;
-use sdroxide_types::AprsSymbolKind;
+use sdro_types::AprsSymbolKind;
 
 /// One 48x48 image per symbol kind, in the enum's own order.
 static ICON_PNG: &[(AprsSymbolKind, &[u8])] = &[

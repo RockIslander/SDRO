@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Needed although the client builds none of it: cargo resolves the whole
-      # workspace first, and sdroxide-hfdl depends on vendor/xng by path. See
+      # workspace first, and sdro-hfdl depends on vendor/xng by path. See
       # the same step in release.yml.
       - uses: actions/checkout@v7
         with:
@@ -45,14 +45,14 @@ jobs:
       # Same stamp the exe gets below, so the browser client this .msi embeds
       # does not claim to be the release while the program hosting it does not.
       - name: Stamp the build
-        run: echo "SDROXIDE_BUILD=dev.${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+        run: echo "SDRO_BUILD=dev.${GITHUB_SHA::7}" >> "$GITHUB_ENV"
       - name: Build web client
-        working-directory: crates/sdroxide-web
+        working-directory: crates/sdro-web
         run: trunk build --release
       - uses: actions/upload-artifact@v7
         with:
           name: web-dist
-          path: crates/sdroxide-web/dist
+          path: crates/sdro-web/dist
           if-no-files-found: error
 
   build:
@@ -83,12 +83,12 @@ jobs:
           # it installs has to be able to say it is not the release. Matches
           # what release.yml's `targets` job stamps a manual run with.
           if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
-            echo "SDROXIDE_BUILD=dev.${GITHUB_SHA::7}" >> "$GITHUB_ENV"
+            echo "SDRO_BUILD=dev.${GITHUB_SHA::7}" >> "$GITHUB_ENV"
           fi
           {
             echo "RELEASE_VERSION=$RELEASE_VERSION"
             echo "CARGO_VERSION=$CARGO_VERSION"
-            echo "PKG=sdroxide-$RELEASE_VERSION-windows-x86_64"
+            echo "PKG=sdro-$RELEASE_VERSION-windows-x86_64"
           } >> "$GITHUB_ENV"
 
       # RADE's Opus dependency is built with autotools, which MSVC cannot
@@ -124,28 +124,28 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: web-dist
-          path: crates/sdroxide-web/dist
+          path: crates/sdro-web/dist
 
       # --no-default-features drops `soapy`; `rtl433` is a default too and is
       # named explicitly, so the .msi carries the same ISM decoders as the
       # release workflow's standard build.
       - name: Build
-        run: cargo build --release --locked -p sdroxide --no-default-features --features embed-web,rtl433
+        run: cargo build --release --locked -p sdro --no-default-features --features embed-web,rtl433
 
       # MinGW links libstdc++/libgcc/libwinpthread as DLLs by default, and
       # those exist only on a machine with MSYS2 or PothosSDR installed — a
       # plain Windows box answers "libstdc++-6.dll not found" the moment the
       # user double-clicks the .exe. .cargo/config.toml and
-      # crates/sdroxide-drm/build.rs link them in statically instead; this
+      # crates/sdro-drm/build.rs link them in statically instead; this
       # checks that actually held, because the failure is otherwise invisible
       # here and only shows up on a user's machine.
       - name: Check for MinGW runtime DLLs
         run: |
-          BIN="target/$CARGO_BUILD_TARGET/release/sdroxide.exe"
+          BIN="target/$CARGO_BUILD_TARGET/release/sdro.exe"
           objdump -p "$BIN" | grep -i "DLL Name:" | sort -u
           if objdump -p "$BIN" \
                | grep -Eiq "DLL Name:[[:space:]]*(libstdc\+\+|libgcc_s|libwinpthread)"; then
-            echo "::error::sdroxide.exe still needs a MinGW runtime DLL beside it"
+            echo "::error::sdro.exe still needs a MinGW runtime DLL beside it"
             exit 1
           fi
 

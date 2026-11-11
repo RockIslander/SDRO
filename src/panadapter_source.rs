@@ -53,8 +53,8 @@
 use std::collections::VecDeque;
 use std::time::Instant;
 
-use sdroxide_radio::{Complex32, ControlUpdate, IqSource, Result};
-use sdroxide_types::{AgcMode, DeviceCaps, Mode, PanadapterAudio, PanadapterConfig, PanadapterTap};
+use sdro_radio::{Complex32, ControlUpdate, IqSource, Result};
+use sdro_types::{AgcMode, DeviceCaps, Mode, PanadapterAudio, PanadapterConfig, PanadapterTap};
 use tracing::{info, warn};
 
 /// How much transceiver audio may queue up before the oldest is dropped.
@@ -217,8 +217,8 @@ impl PanadapterSource {
             gains: rx
                 .gains
                 .iter()
-                .filter(|g| g.direction == sdroxide_types::Direction::Rx)
-                .chain(ctrl.gains.iter().filter(|g| g.direction == sdroxide_types::Direction::Tx))
+                .filter(|g| g.direction == sdro_types::Direction::Rx)
+                .chain(ctrl.gains.iter().filter(|g| g.direction == sdro_types::Direction::Tx))
                 .cloned()
                 .collect(),
             antennas_rx: rx.antennas_rx.clone(),
@@ -326,7 +326,7 @@ impl PanadapterSource {
 
     /// How far above our dial the transceiver's own VFO has to sit, in Hz.
     ///
-    /// Zero everywhere but CW, and there it is the sidetone pitch. sdroxide's
+    /// Zero everywhere but CW, and there it is the sidetone pitch. sdro's
     /// CW dial is a zero-beat: the note being copied sits a pitch above it,
     /// which is what [`Mode::on_air_hz`] answers and where the receiver's
     /// passband is centred. A transceiver put in CW makes its own carrier on
@@ -442,10 +442,10 @@ impl IqSource for PanadapterSource {
             return Some(why);
         }
         if mode == Mode::HdRadio {
-            let hd = if sdroxide_dsp::hd_radio_is_am(self.center_hz()) {
-                sdroxide_nrsc5::Mode::Am
+            let hd = if sdro_dsp::hd_radio_is_am(self.center_hz()) {
+                sdro_nrsc5::Mode::Am
             } else {
-                sdroxide_nrsc5::Mode::Fm
+                sdro_nrsc5::Mode::Fm
             };
             if self.rx.sample_rate() < hd.min_channel_rate_hz() {
                 return Some("The attached panadapter receiver is too narrow for HD Radio");
@@ -739,7 +739,7 @@ impl IqSource for PanadapterSource {
 
     /// The *transceiver's*: predistortion corrects a transmitter, and the
     /// receiver lending its spectrum here has none.
-    fn puresignal(&mut self) -> Option<sdroxide_types::PsMeter> {
+    fn puresignal(&mut self) -> Option<sdro_types::PsMeter> {
         self.ctrl.puresignal()
     }
 
@@ -807,7 +807,7 @@ impl IqSource for PanadapterSource {
         self.ctrl.commands_tx_power()
     }
 
-    fn tx_telemetry(&mut self) -> Option<sdroxide_types::TxTelemetry> {
+    fn tx_telemetry(&mut self) -> Option<sdro_types::TxTelemetry> {
         self.ctrl.tx_telemetry()
     }
 
@@ -880,7 +880,7 @@ impl IqSource for PanadapterSource {
     }
 
     /// The transceiver's tuner: it is the radio that transmits.
-    fn atu(&self) -> Option<sdroxide_types::AtuState> {
+    fn atu(&self) -> Option<sdro_types::AtuState> {
         self.ctrl.atu()
     }
 
@@ -941,7 +941,7 @@ impl IqSource for PanadapterSource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdroxide_types::{IfModeClass, PanadapterTap};
+    use sdro_types::{IfModeClass, PanadapterTap};
     use std::sync::{Arc, Mutex};
 
     /// What a fake source was asked to do, and what it should report back —
@@ -1326,7 +1326,7 @@ mod tests {
     /// the mute is then the only thing that can silence a receiver listening to
     /// its own station's transmitter. So it follows the operator's own MUTE ON
     /// TRANSMIT and nothing else: the blanking above says what happens to an
-    /// over *sdroxide* keys and has no bearing on this one (issue #244).
+    /// over *sdro* keys and has no bearing on this one (issue #244).
     #[test]
     fn a_rig_driven_over_is_muted_by_the_mute_alone() {
         for blank in [true, false] {

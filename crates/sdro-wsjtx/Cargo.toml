@@ -1,0 +1,8 @@
+[package]
+name = "sdro-wsjtx"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sdro-types.workspace = true
+tracing.workspace = true

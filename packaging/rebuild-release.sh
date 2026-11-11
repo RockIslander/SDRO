@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Rebuild the standard (non-SoapySDR) sdroxide binary of a release, the way
+# Rebuild the standard (non-SoapySDR) sdro binary of a release, the way
 # release.yml builds it, so it can be compared with the published one:
 #
 #   git clone --recurse-submodules --branch v1.8.0 https://github.com/dividebysandwich/sdroxide
-#   cd sdroxide
+#   cd sdro
 #   packaging/rebuild-release.sh
-#   packaging/verify-release.sh v1.8.0 linux-x86_64-compat=target/rebuild/sdroxide
+#   packaging/verify-release.sh v1.8.0 linux-x86_64-compat=target/rebuild/sdro
 #
 # Run it from the top of the checkout, once the build environment is in place:
 # the Rust toolchain named by RUST_TOOLCHAIN in .github/workflows/release.yml
@@ -18,10 +18,10 @@
 # details. A toolchain other than the release's cannot reproduce it, so that is
 # checked rather than left to show up as a mismatch.
 #
-#   --no-web   use the web client already in crates/sdroxide-web/dist instead
+#   --no-web   use the web client already in crates/sdro-web/dist instead
 #              of building it (CI builds it once on Linux, as the release does)
 #
-# The binary ends up in target/rebuild/ (sdroxide, or sdroxide.exe).
+# The binary ends up in target/rebuild/ (sdro, or sdro.exe).
 #
 # Keep in step with the `web` and `build` jobs of release.yml; a drift between
 # the two shows up as a mismatch when the release is verified.
@@ -36,7 +36,7 @@ esac
 
 die() { echo "rebuild-release: $*" >&2; exit 1; }
 [[ -f packaging/reproducible-env.sh && -f .github/workflows/release.yml ]] \
-  || die "run it from the top of an sdroxide checkout"
+  || die "run it from the top of an sdro checkout"
 
 rel=.github/workflows/release.yml
 want_rustc=$(sed -n 's/^  RUST_TOOLCHAIN: "\(.*\)"$/\1/p' "$rel")
@@ -50,7 +50,7 @@ case "$(uname -s)" in
     # The Windows release is the MinGW target; the setup action sets this, and
     # reproducible-env.sh needs it set before it runs.
     export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-x86_64-pc-windows-gnu}
-    bin="target/$CARGO_BUILD_TARGET/release/sdroxide.exe"
+    bin="target/$CARGO_BUILD_TARGET/release/sdro.exe"
     strip_bin() { strip "$1"; }
     ;;
   Darwin)
@@ -62,12 +62,12 @@ case "$(uname -s)" in
     if [[ "$have_xcode" != "$want_xcode" && "$have_xcode" != "$want_xcode.0" ]]; then
       echo "rebuild-release: warning: Xcode is $have_xcode, the release was built with $want_xcode; the binary will differ (DEVELOPER_DIR=/Applications/Xcode_$want_xcode.app/Contents/Developer)" >&2
     fi
-    bin=target/release/sdroxide
+    bin=target/release/sdro
     # -x: a Rust binary's indirect symbol table makes a full strip fail.
     strip_bin() { strip -x "$1"; }
     ;;
   *)
-    bin=target/release/sdroxide
+    bin=target/release/sdro
     strip_bin() { strip "$1"; }
     ;;
 esac
@@ -81,14 +81,14 @@ if [[ $build_web == 1 ]]; then
   if [[ "$have_trunk" != "$want_trunk" ]]; then
     echo "rebuild-release: warning: trunk is $have_trunk, the release used $want_trunk" >&2
   fi
-  rm -rf crates/sdroxide-web/dist
-  (cd crates/sdroxide-web && trunk build --release)
+  rm -rf crates/sdro-web/dist
+  (cd crates/sdro-web && trunk build --release)
 else
-  [[ -f crates/sdroxide-web/dist/index.html ]] \
-    || die "--no-web, but crates/sdroxide-web/dist holds no web client"
+  [[ -f crates/sdro-web/dist/index.html ]] \
+    || die "--no-web, but crates/sdro-web/dist holds no web client"
 fi
 
-cargo build --release --locked -p sdroxide --no-default-features --features embed-web,rtl433
+cargo build --release --locked -p sdro --no-default-features --features embed-web,rtl433
 strip_bin "$bin"
 mkdir -p target/rebuild
 cp "$bin" target/rebuild/

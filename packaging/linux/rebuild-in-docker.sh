@@ -81,8 +81,8 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends git ca-certificates
 git clone --quiet --depth 1 --branch "$TAG" --recurse-submodules \
-  "https://github.com/$REPO" /src/rebuild/sdroxide
-cd /src/rebuild/sdroxide
+  "https://github.com/$REPO" /src/rebuild/sdro
+cd /src/rebuild/sdro
 [[ -x packaging/rebuild-release.sh ]] || { echo "$TAG has no packaging/rebuild-release.sh"; exit 1; }
 packaging/linux/install-compat-deps.sh cat
 curl -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal \
@@ -94,10 +94,10 @@ curl -sSfL "https://github.com/trunk-rs/trunk/releases/download/v$TRUNK/trunk-$(
   | tar -xzf - -C /opt/trunk
 export PATH="/opt/trunk:$PATH"
 packaging/rebuild-release.sh
-cp target/rebuild/sdroxide /out/
-rm -rf /out/web && cp -R crates/sdroxide-web/dist /out/web
+cp target/rebuild/sdro /out/
+rm -rf /out/web && cp -R crates/sdro-web/dist /out/web
 chown -R "$HOST_UID:$HOST_GID" /out
 EOF
 
 "$here/packaging/verify-release.sh" --repo "$repo" "$tag" \
-  "linux-$arch-compat=$out/sdroxide" "web=$out/web"
+  "linux-$arch-compat=$out/sdro" "web=$out/web"

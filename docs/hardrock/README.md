@@ -10,7 +10,7 @@ The user manual's section 2.23 describes it in full.
 
 **Only the Hardrock-500 has been tested on a real amplifier** (AJ3G, HR500 with VRF2944 output devices and the ATU-500, 115200 baud). Use it with any other model at your own risk.
 
-**Tested on Windows 11 only.** It should work on Linux and macOS, which SDRoxide supports, but it hasn't been tried there.
+**Tested on Windows 11 only.** It should work on Linux and macOS, which SDRO supports, but it hasn't been tried there.
 
 Maintained by AJ3G.
 
@@ -27,4 +27,4 @@ An amplifier this size can damage itself. The panel never switches a relay that 
 
 ## Planned: standalone app
 
-The same panel as its own application, without SDRoxide. It has no radio to follow, so it will show a standing notice that band switching is the user's job: switch bands on the panel, or let the rig do it through the amplifier's control interface (as the ELAD does). The band follow inside SDRoxide does not exist there.
+The same panel as its own application, without SDRO. It has no radio to follow, so it will show a standing notice that band switching is the user's job: switch bands on the panel, or let the rig do it through the amplifier's control interface (as the ELAD does). The band follow inside SDRO does not exist there.

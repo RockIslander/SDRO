@@ -27,7 +27,7 @@
 //! which is why the engine returns it without applying `cal_offset_db`.
 //!
 //! One honest caveat: that figure is for the receiver's own ±6 kHz passband,
-//! not for whatever filter sdroxide has in front of the demodulator. A narrow
+//! not for whatever filter sdro has in front of the demodulator. A narrow
 //! CW filter here still reads the wideband level.
 //!
 //! # Receive only
@@ -38,9 +38,9 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
-use sdroxide_kiwisdr::KiwiHandle;
-use sdroxide_radio::{Complex32, IqSource, Result};
-use sdroxide_types::KiwiConfig;
+use sdro_kiwisdr::KiwiHandle;
+use sdro_radio::{Complex32, IqSource, Result};
+use sdro_types::KiwiConfig;
 
 /// How long the receiver may deliver nothing before the link counts as dead.
 /// The same window the SpyServer and `rtl_tcp` backends use: long enough that a
@@ -129,7 +129,7 @@ impl IqSource for KiwiSdrSource {
     fn set_center_hz(&mut self, hz: f64) -> Result<()> {
         let (lo, hi) = self.tuning_range();
         if hz < lo || hz > hi {
-            return Err(sdroxide_radio::RadioError::Msg(format!(
+            return Err(sdro_radio::RadioError::Msg(format!(
                 "this receiver tunes {:.3}–{:.3} MHz",
                 lo / 1e6,
                 hi / 1e6
@@ -238,7 +238,7 @@ impl IqSource for KiwiSdrSource {
     /// that *refused* — full, wrong password, inactivity timeout, kicked by its
     /// operator — must not be: it is working perfectly and has said no, and a
     /// client that answered that by reconnecting every fifteen seconds forever
-    /// would be the reason sdroxide got blocked.
+    /// would be the reason sdro got blocked.
     ///
     /// So a refusal is allowed through exactly once. That single attempt is
     /// what carries the receiver's own words to the operator: the reconnect

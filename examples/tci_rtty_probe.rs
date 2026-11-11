@@ -2,7 +2,7 @@
 //! against it. Diagnostic tool for issue #23.
 //!
 //! It deliberately does *not* call `set_center` — the rig may be shared with a
-//! running sdroxide session, and retuning someone's receiver out from under
+//! running sdro session, and retuning someone's receiver out from under
 //! them to run a test is not on. It captures wherever the rig already is and
 //! takes the centre frequency from the TCI status burst.
 //!
@@ -12,8 +12,8 @@
 //!
 //! `cargo run --release --example tci_rtty_probe -- [seconds]`
 
-use sdroxide_dsp::{Complex32, RttyRx, bandpass_taps};
-use sdroxide_tci::{TciHandle, TciUpdate};
+use sdro_dsp::{Complex32, RttyRx, bandpass_taps};
+use sdro_tci::{TciHandle, TciUpdate};
 
 const IQ_RATE: f64 = 192_000.0;
 const AUDIO_RATE: f64 = 8_000.0;

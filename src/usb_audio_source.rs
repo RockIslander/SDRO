@@ -11,9 +11,9 @@
 //! audio-band panadapter, and no dial to command anywhere — the centre is a
 //! label the operator keeps in the app, because nothing else owns a knob.
 
-use sdroxide_dsp::MonoResampler;
-use sdroxide_radio::rtrb;
-use sdroxide_radio::{Complex32, IqSource, Result};
+use sdro_dsp::MonoResampler;
+use sdro_radio::rtrb;
+use sdro_radio::{Complex32, IqSource, Result};
 
 use crate::audio_cat_source::{DropWatch, drain_tx_audio, write_tx_audio};
 
@@ -22,7 +22,7 @@ use crate::audio_cat_source::{DropWatch, drain_tx_audio, write_tx_audio};
 /// this is just the width of the picture, not a filter of ours.
 ///
 /// A handheld's speaker path is roughly 4 kHz of audio, the same figure the
-/// demod-audio CAT path defaults to ([`sdroxide_types::CatConfig::audio_bw_hz`]).
+/// demod-audio CAT path defaults to ([`sdro_types::CatConfig::audio_bw_hz`]).
 const AUDIO_BW_HZ: f64 = 4000.0;
 
 /// A radio reached through nothing but two sound cards: demod audio in from
@@ -31,7 +31,7 @@ pub struct UsbAudioSource {
     // RX audio from the radio (mono demod). `None` when the capture device
     // could not be opened — the app still runs so the user can fix the device
     // in Settings; RX is just silent until then.
-    in_stream: Option<sdroxide_audio::AudioInput>,
+    in_stream: Option<sdro_audio::AudioInput>,
     in_consumer: rtrb::Consumer<f32>,
     in_rate: f64,
     /// Capture frames the sound card had to throw away, and when that was last
@@ -41,7 +41,7 @@ pub struct UsbAudioSource {
 
     // TX audio to the radio (interleaved stereo playback ring, exactly as the
     // CAT source's).
-    out: Option<(sdroxide_audio::AudioOutput, rtrb::Producer<f32>)>,
+    out: Option<(sdro_audio::AudioOutput, rtrb::Producer<f32>)>,
     tx_resampler: Option<MonoResampler>,
     tx_scratch: Vec<f32>,
 
@@ -91,7 +91,7 @@ impl UsbAudioSource {
         // silent but keeps the app (and its Settings dialog) alive. Demod audio
         // is fixed at 48 kHz, the same as the CAT path: it arrives already
         // inside the radio's own filter.
-        let opened = sdroxide_audio::start_input_buffered(audio_in, 48_000);
+        let opened = sdro_audio::start_input_buffered(audio_in, 48_000);
         let dev_label = audio_in.unwrap_or("system default");
         // A dummy, always-empty ring keeps `read` returning silence when RX is
         // unavailable or guarded off.
@@ -128,10 +128,10 @@ impl UsbAudioSource {
         // TX playback is best-effort: a missing device just means no TX audio
         // reaching the radio, which on a VOX-keyed radio is the same as never
         // keying.
-        let (out, out_status) = match sdroxide_audio::start_output(
+        let (out, out_status) = match sdro_audio::start_output(
             audio_out,
             48_000,
-            sdroxide_types::AudioRouting::Both,
+            sdro_types::AudioRouting::Both,
         ) {
             Ok((o, p)) => {
                 let status = o.swap.as_ref().map(|sw| {
@@ -202,7 +202,7 @@ impl UsbAudioSource {
              — this machine is not emptying a {:.0} Hz card fast enough. The panadapter will \
              look fine and the demodulated audio will break up. This card is fixed at 48 kHz, \
              so there is no rate to lower — look instead at what else on this machine is \
-             keeping sdroxide off the CPU.",
+             keeping sdro off the CPU.",
             window.as_secs_f64(),
             lost as f64 * 1000.0 / self.in_rate,
             self.in_rate,

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Print the SHA-256 of the binaries inside a published sdroxide release, or
+# Print the SHA-256 of the binaries inside a published sdro release, or
 # compare them with ones you built yourself.
 #
 #   packaging/verify-release.sh v1.8.0
 #       the hash of every reproducible binary in the release
-#   packaging/verify-release.sh v1.8.0 linux-x86_64-compat=target/rebuild/sdroxide
+#   packaging/verify-release.sh v1.8.0 linux-x86_64-compat=target/rebuild/sdro
 #       MATCH or DIFFER for your rebuild (exit status 1 on DIFFER)
-#   packaging/verify-release.sh v1.8.0 web=crates/sdroxide-web/dist
+#   packaging/verify-release.sh v1.8.0 web=crates/sdro-web/dist
 #       the web client, file by file
 #
 # Options, before the tag:
@@ -16,7 +16,7 @@
 #
 # It is the binaries that are compared, not the release assets: a .tar.gz or
 # .zip is checked against the release's SHA256SUMS and then opened, and what is
-# compared is the sdroxide (or sdroxide.exe) inside it. That is what a rebuild
+# compared is the sdro (or sdro.exe) inside it. That is what a rebuild
 # reproduces. Only the standard (non-SoapySDR) build of these platforms is
 # expected to reproduce — the ones with a pinned build environment:
 #
@@ -145,9 +145,9 @@ for arg in "$@"; do
   mine=""
   [[ "$arg" == *=* ]] && mine=${arg#*=}
   case "$platform" in
-    web) asset="sdroxide-web-$tag.zip"; inner="" ;;
-    windows-*) asset="sdroxide-$tag-$platform.zip"; inner="sdroxide/sdroxide.exe" ;;
-    *) asset="sdroxide-$tag-$platform.tar.gz"; inner="sdroxide/sdroxide" ;;
+    web) asset="sdro-web-$tag.zip"; inner="" ;;
+    windows-*) asset="sdro-$tag-$platform.zip"; inner="sdro/sdro.exe" ;;
+    *) asset="sdro-$tag-$platform.tar.gz"; inner="sdro/sdro" ;;
   esac
   open_asset "$platform" "$asset"
 
@@ -179,7 +179,7 @@ for arg in "$@"; do
 
   released=$(hash_of "$work/$platform/$inner")
   if [[ -z "$mine" ]]; then
-    echo "$released  $platform/${inner#sdroxide/}"
+    echo "$released  $platform/${inner#sdro/}"
     continue
   fi
   [[ -f "$mine" ]] || die "$mine: no such file"

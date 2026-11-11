@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/*"]
-default-members = [".", "crates/sdroxide-types", "crates/sdroxide-proto", "crates/sdroxide-dsp", "crates/sdroxide-radio", "crates/sdroxide-config"]
+default-members = [".", "crates/sdro-types", "crates/sdro-proto", "crates/sdro-dsp", "crates/sdro-radio", "crates/sdro-config"]
 # The vendored crates are reached through `[patch.crates-io]`, not as members:
 # they are upstream's code under upstream's licences, not ours to lint or
 # version with the rest.
@@ -26,15 +26,15 @@ ewebsock = { path = "vendor/ewebsock" }
 soapysdr = { path = "vendor/soapysdr" }
 
 [workspace.package]
-version = "1.7.0"
+version = "1.0.0"
 edition = "2024"
 # The native binary links mfsk-core (GPL-3.0-only) for FT8/FT4 and the
 # DeepCW model (AGPL-3.0-only) for CW, so the built binary carries both. AGPL is
 # the stronger of the two and it adds §13: whoever is offered the program over a
-# network has to be offered its source. Anyone running sdroxide-server for remote
+# network has to be offered its source. Anyone running sdro-server for remote
 # clients is doing exactly that.
 #
-# Both are confined to one crate each — sdroxide-digi and sdroxide-deepcw — and
+# Both are confined to one crate each — sdro-digi and sdro-deepcw — and
 # the wasm remote client links neither.
 license = "GPL-3.0-or-later"
 
@@ -51,120 +51,120 @@ opt-level = 2
 [profile.release.package.mfsk-core]
 opt-level = 2
 
-# A release build of sdroxide-ui does not reproduce when it is split into
+# A release build of sdro-ui does not reproduce when it is split into
 # several codegen units: recompiling it from identical inputs (identical
 # rmeta) leaves a few of its object files different, with drop glue and
 # closure shims landing in other units, both natively and for wasm32 on Rust
 # 1.98.1. That breaks bit-for-bit rebuilds of the -compat binaries and the web
 # client (see .github/workflows/reproducible.yml). One unit makes it stable,
 # for about half a minute more build time.
-[profile.release.package.sdroxide-ui]
+[profile.release.package.sdro-ui]
 codegen-units = 1
 
-[profile.dev.package.sdroxide-dsp]
+[profile.dev.package.sdro-dsp]
 opt-level = 2
 
-[profile.dev.package.sdroxide-radio]
+[profile.dev.package.sdro-radio]
 opt-level = 2
 
 # The CW skimmer's STFT + per-bin scan run every audio block; unoptimized they
 # stutter the audio, so keep them fast in dev too.
-[profile.dev.package.sdroxide-skimmer]
+[profile.dev.package.sdro-skimmer]
 opt-level = 2
 
 # The ISM burst gate measures the power of every sample on every channel in the
 # plan; unoptimized that alone outweighs the rest of the receive chain.
-[profile.dev.package.sdroxide-ism]
+[profile.dev.package.sdro-ism]
 opt-level = 2
 
 # The ADS-B preamble correlator touches every sample of a 2.4 Msps stream and
 # then slices 112 bits per candidate; unoptimized it costs more than everything
 # else in the receive chain put together.
-[profile.dev.package.sdroxide-adsb]
+[profile.dev.package.sdro-adsb]
 opt-level = 2
 
 # Seven VDL2 channels each get a downconverter and a burst gate over the same
 # window, and every one of them measures the power of every sample; unoptimized
 # that alone outweighs the rest of the receive chain, exactly as the ISM gate
 # does.
-[profile.dev.package.sdroxide-vdl2]
+[profile.dev.package.sdro-vdl2]
 opt-level = 2
 
 # Both AIS channels get a down-converter, a burst gate and a receive filter over
 # the same window, and the filter is a dot product per sample; unoptimized that
 # alone outweighs the rest of the receive chain, exactly as the VDL2 lane does.
-[profile.dev.package.sdroxide-ais]
+[profile.dev.package.sdro-ais]
 opt-level = 2
 
 # RADE's per-frame buffer shuffling sits between two C libraries that are
 # always built optimized; leaving the Rust glue slow would stall the worker.
-[profile.dev.package.sdroxide-rade]
+[profile.dev.package.sdro-rade]
 opt-level = 2
 
 # The DRM worker shuffles buffers between two always-optimized C libraries on
 # every block, for the same reason RADE's does.
-[profile.dev.package.sdroxide-drm]
+[profile.dev.package.sdro-drm]
 opt-level = 2
 
 # DeepCW's STFT runs ahead of every inference; unoptimized it costs more than
 # the network it feeds.
-[profile.dev.package.sdroxide-deepcw]
+[profile.dev.package.sdro-deepcw]
 opt-level = 2
 
 [workspace.dependencies]
-sdroxide-types = { path = "crates/sdroxide-types" }
+sdro-types = { path = "crates/sdro-types" }
 # The build stamp. No dependencies and no build inputs beyond one
 # environment variable, so it builds for wasm32 alongside everything else.
-sdroxide-version = { path = "crates/sdroxide-version" }
-sdroxide-proto = { path = "crates/sdroxide-proto" }
-sdroxide-dsp = { path = "crates/sdroxide-dsp" }
-sdroxide-atchat = { path = "crates/sdroxide-atchat" }
-sdroxide-rade = { path = "crates/sdroxide-rade" }
-sdroxide-drm = { path = "crates/sdroxide-drm" }
-sdroxide-faad2 = { path = "crates/sdroxide-faad2" }
-sdroxide-nrsc5 = { path = "crates/sdroxide-nrsc5" }
-sdroxide-audio = { path = "crates/sdroxide-audio" }
-sdroxide-server = { path = "crates/sdroxide-server" }
-sdroxide-config = { path = "crates/sdroxide-config" }
-sdroxide-ui = { path = "crates/sdroxide-ui" }
-sdroxide-cat = { path = "crates/sdroxide-cat" }
-sdroxide-midi = { path = "crates/sdroxide-midi" }
-sdroxide-rigctld = { path = "crates/sdroxide-rigctld" }
-sdroxide-rotator = { path = "crates/sdroxide-rotator" }
-sdroxide-hpsdr = { path = "crates/sdroxide-hpsdr" }
-sdroxide-tci = { path = "crates/sdroxide-tci" }
-sdroxide-icomnet = { path = "crates/sdroxide-icomnet" }
-sdroxide-smartsdr = { path = "crates/sdroxide-smartsdr" }
-sdroxide-r82xx = { path = "crates/sdroxide-r82xx" }
-sdroxide-rtlsdr = { path = "crates/sdroxide-rtlsdr" }
-sdroxide-rx888 = { path = "crates/sdroxide-rx888" }
-sdroxide-airspyhf = { path = "crates/sdroxide-airspyhf" }
-sdroxide-airspy = { path = "crates/sdroxide-airspy" }
-sdroxide-hydrasdr = { path = "crates/sdroxide-hydrasdr" }
-sdroxide-hackrf = { path = "crates/sdroxide-hackrf" }
-sdroxide-pluto = { path = "crates/sdroxide-pluto" }
-sdroxide-sdrplay = { path = "crates/sdroxide-sdrplay" }
-sdroxide-elad = { path = "crates/sdroxide-elad" }
-sdroxide-lime = { path = "crates/sdroxide-lime" }
-sdroxide-limerfe = { path = "crates/sdroxide-limerfe" }
-sdroxide-fobos = { path = "crates/sdroxide-fobos" }
-sdroxide-relay = { path = "crates/sdroxide-relay" }
-sdroxide-hardrock = { path = "crates/sdroxide-hardrock" }
-sdroxide-spyserver = { path = "crates/sdroxide-spyserver" }
-sdroxide-kiwisdr = { path = "crates/sdroxide-kiwisdr" }
-sdroxide-net = { path = "crates/sdroxide-net" }
-sdroxide-winlink = { path = "crates/sdroxide-winlink" }
-sdroxide-ax25 = { path = "crates/sdroxide-ax25" }
-sdroxide-tnc = { path = "crates/sdroxide-tnc" }
-sdroxide-mercury = { path = "crates/sdroxide-mercury" }
-sdroxide-data2g = { path = "crates/sdroxide-data2g" }
-sdroxide-kiss = { path = "crates/sdroxide-kiss" }
-sdroxide-deepcw = { path = "crates/sdroxide-deepcw" }
-sdroxide-ism = { path = "crates/sdroxide-ism" }
-sdroxide-aprs = { path = "crates/sdroxide-aprs" }
-sdroxide-adsb = { path = "crates/sdroxide-adsb" }
-sdroxide-vdl2 = { path = "crates/sdroxide-vdl2" }
-sdroxide-ais = { path = "crates/sdroxide-ais" }
+sdro-version = { path = "crates/sdro-version" }
+sdro-proto = { path = "crates/sdro-proto" }
+sdro-dsp = { path = "crates/sdro-dsp" }
+sdro-atchat = { path = "crates/sdro-atchat" }
+sdro-rade = { path = "crates/sdro-rade" }
+sdro-drm = { path = "crates/sdro-drm" }
+sdro-faad2 = { path = "crates/sdro-faad2" }
+sdro-nrsc5 = { path = "crates/sdro-nrsc5" }
+sdro-audio = { path = "crates/sdro-audio" }
+sdro-server = { path = "crates/sdro-server" }
+sdro-config = { path = "crates/sdro-config" }
+sdro-ui = { path = "crates/sdro-ui" }
+sdro-cat = { path = "crates/sdro-cat" }
+sdro-midi = { path = "crates/sdro-midi" }
+sdro-rigctld = { path = "crates/sdro-rigctld" }
+sdro-rotator = { path = "crates/sdro-rotator" }
+sdro-hpsdr = { path = "crates/sdro-hpsdr" }
+sdro-tci = { path = "crates/sdro-tci" }
+sdro-icomnet = { path = "crates/sdro-icomnet" }
+sdro-smartsdr = { path = "crates/sdro-smartsdr" }
+sdro-r82xx = { path = "crates/sdro-r82xx" }
+sdro-rtlsdr = { path = "crates/sdro-rtlsdr" }
+sdro-rx888 = { path = "crates/sdro-rx888" }
+sdro-airspyhf = { path = "crates/sdro-airspyhf" }
+sdro-airspy = { path = "crates/sdro-airspy" }
+sdro-hydrasdr = { path = "crates/sdro-hydrasdr" }
+sdro-hackrf = { path = "crates/sdro-hackrf" }
+sdro-pluto = { path = "crates/sdro-pluto" }
+sdro-sdrplay = { path = "crates/sdro-sdrplay" }
+sdro-elad = { path = "crates/sdro-elad" }
+sdro-lime = { path = "crates/sdro-lime" }
+sdro-limerfe = { path = "crates/sdro-limerfe" }
+sdro-fobos = { path = "crates/sdro-fobos" }
+sdro-relay = { path = "crates/sdro-relay" }
+sdro-hardrock = { path = "crates/sdro-hardrock" }
+sdro-spyserver = { path = "crates/sdro-spyserver" }
+sdro-kiwisdr = { path = "crates/sdro-kiwisdr" }
+sdro-net = { path = "crates/sdro-net" }
+sdro-winlink = { path = "crates/sdro-winlink" }
+sdro-ax25 = { path = "crates/sdro-ax25" }
+sdro-tnc = { path = "crates/sdro-tnc" }
+sdro-mercury = { path = "crates/sdro-mercury" }
+sdro-data2g = { path = "crates/sdro-data2g" }
+sdro-kiss = { path = "crates/sdro-kiss" }
+sdro-deepcw = { path = "crates/sdro-deepcw" }
+sdro-ism = { path = "crates/sdro-ism" }
+sdro-aprs = { path = "crates/sdro-aprs" }
+sdro-adsb = { path = "crates/sdro-adsb" }
+sdro-vdl2 = { path = "crates/sdro-vdl2" }
+sdro-ais = { path = "crates/sdro-ais" }
 
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -193,7 +193,7 @@ rtrb = "0.4"
 # Nothing is committed by that (the submodule just goes dirty), but it is
 # alarming and easy to mistake for a real diff. rustfmt's `ignore` key would
 # fix it and is nightly-only, so on stable format our own crates by name
-# instead: `cargo fmt -p sdroxide-radio -p sdroxide-ui …`, or check with
+# instead: `cargo fmt -p sdro-radio -p sdro-ui …`, or check with
 # `cargo fmt --all --check` and read past the `vendor/xng` lines.
 xng-mode-hfdl = { path = "vendor/xng/crates/xng-mode-hfdl" }
 # Pure-Rust USB — the RTL-SDR backend's only dependency. No libusb, so it needs
@@ -205,44 +205,44 @@ nusb = "0.2.7"
 libloading = "0.9"
 
 [package]
-name = "sdroxide"
+name = "sdro"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "PowerSDR/Thetis-style SDR transceiver with a native GUI, a browser-served web UI, and FT8/FT4 digital modes"
 
 [dependencies]
-sdroxide-types.workspace = true
-sdroxide-version.workspace = true
-sdroxide-proto.workspace = true
-sdroxide-dsp.workspace = true
-sdroxide-nrsc5.workspace = true
-sdroxide-radio = { path = "crates/sdroxide-radio", default-features = false }
-sdroxide-config.workspace = true
-sdroxide-net.workspace = true
-sdroxide-audio.workspace = true
-sdroxide-server.workspace = true
-sdroxide-cat.workspace = true
-sdroxide-hpsdr.workspace = true
-sdroxide-tci.workspace = true
-sdroxide-smartsdr.workspace = true
-sdroxide-icomnet.workspace = true
-sdroxide-rtlsdr.workspace = true
-sdroxide-rx888.workspace = true
-sdroxide-airspyhf.workspace = true
-sdroxide-airspy.workspace = true
-sdroxide-hydrasdr.workspace = true
-sdroxide-fobos.workspace = true
-sdroxide-hackrf.workspace = true
-sdroxide-pluto.workspace = true
-sdroxide-sdrplay.workspace = true
-sdroxide-elad.workspace = true
-sdroxide-lime.workspace = true
-sdroxide-limerfe.workspace = true
-sdroxide-relay.workspace = true
-sdroxide-spyserver.workspace = true
-sdroxide-kiwisdr.workspace = true
-sdroxide-ui = { workspace = true, features = ["remote"] }
+sdro-types.workspace = true
+sdro-version.workspace = true
+sdro-proto.workspace = true
+sdro-dsp.workspace = true
+sdro-nrsc5.workspace = true
+sdro-radio = { path = "crates/sdro-radio", default-features = false }
+sdro-config.workspace = true
+sdro-net.workspace = true
+sdro-audio.workspace = true
+sdro-server.workspace = true
+sdro-cat.workspace = true
+sdro-hpsdr.workspace = true
+sdro-tci.workspace = true
+sdro-smartsdr.workspace = true
+sdro-icomnet.workspace = true
+sdro-rtlsdr.workspace = true
+sdro-rx888.workspace = true
+sdro-airspyhf.workspace = true
+sdro-airspy.workspace = true
+sdro-hydrasdr.workspace = true
+sdro-fobos.workspace = true
+sdro-hackrf.workspace = true
+sdro-pluto.workspace = true
+sdro-sdrplay.workspace = true
+sdro-elad.workspace = true
+sdro-lime.workspace = true
+sdro-limerfe.workspace = true
+sdro-relay.workspace = true
+sdro-spyserver.workspace = true
+sdro-kiwisdr.workspace = true
+sdro-ui = { workspace = true, features = ["remote"] }
 # `accesskit` is one of eframe's defaults, and turning the defaults off
 # silently switched it back off: without it the whole widget tree is
 # invisible to NVDA, Orca and VoiceOver. It is native-only (it maps to
@@ -270,19 +270,19 @@ rtrb.workspace = true
 default = ["soapy", "rtl433"]
 # SoapySDR device support. Turn off (`--no-default-features`) for a CAT-only
 # binary that builds and runs without libSoapySDR installed.
-soapy = ["sdroxide-radio/soapy"]
+soapy = ["sdro-radio/soapy"]
 # The several hundred ISM device decoders of the embedded rtl_433. Needs a C
 # compiler, CMake, and `git submodule update --init --recursive`. Turn off for a
-# build with only sdroxide's own ISM decoders.
-rtl433 = ["sdroxide-radio/rtl433"]
+# build with only sdro's own ISM decoders.
+rtl433 = ["sdro-radio/rtl433"]
 # Bundle the trunk-built web client into the binary (run `trunk build
-# --release` in crates/sdroxide-web first).
-embed-web = ["sdroxide-server/embed-web"]
+# --release` in crates/sdro-web first).
+embed-web = ["sdro-server/embed-web"]
 
 # `cargo deb` packaging (used by the release workflow with --no-build after a
 # `--features embed-web` release build).
 # Base .deb = the standard (non-SoapySDR) build: drives CAT/OpenHPSDR/TCI and
-# needs no libSoapySDR, so no SoapySDR recommendation. Package name `sdroxide`.
+# needs no libSoapySDR, so no SoapySDR recommendation. Package name `sdro`.
 [package.metadata.deb]
 maintainer = "Josef Jahn <josef.jahn@gmail.com>"
 copyright = "2026, Josef Jahn"
@@ -291,58 +291,58 @@ PowerSDR/Thetis-style software-defined-radio transceiver client with an egui \
 GUI. Runs as a native desktop application or as a server that streams the same \
 UI to a web browser. Drives CAT-controlled radios, OpenHPSDR, and TCI; includes \
 FT8/FT4 digital modes and an integrated logbook. For SoapySDR device support \
-(HackRF, RTL-SDR, etc.) install the sdroxide-soapysdr package instead."""
+(HackRF, RTL-SDR, etc.) install the sdro-soapysdr package instead."""
 section = "hamradio"
 priority = "optional"
 license-file = ["LICENSE", "0"]
 features = ["embed-web"]
 assets = [
-    ["target/release/sdroxide", "usr/bin/", "755"],
-    ["packaging/linux/sdroxide.desktop", "usr/share/applications/", "644"],
-    ["packaging/linux/60-sdroxide-rtlsdr.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/linux/60-sdroxide-rx888.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/linux/60-sdroxide-airspyhf.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/linux/60-sdroxide-hackrf.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/linux/60-sdroxide-airspy.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/linux/60-sdroxide-hydrasdr.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/linux/60-sdroxide-elad.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/linux/60-sdroxide-limerfe.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/linux/60-sdroxide-relay.rules", "usr/lib/udev/rules.d/", "644"],
-    ["packaging/icons/sdroxide.svg", "usr/share/icons/hicolor/scalable/apps/sdroxide.svg", "644"],
-    ["packaging/icons/sdroxide-16.png", "usr/share/icons/hicolor/16x16/apps/sdroxide.png", "644"],
-    ["packaging/icons/sdroxide-24.png", "usr/share/icons/hicolor/24x24/apps/sdroxide.png", "644"],
-    ["packaging/icons/sdroxide-32.png", "usr/share/icons/hicolor/32x32/apps/sdroxide.png", "644"],
-    ["packaging/icons/sdroxide-48.png", "usr/share/icons/hicolor/48x48/apps/sdroxide.png", "644"],
-    ["packaging/icons/sdroxide-64.png", "usr/share/icons/hicolor/64x64/apps/sdroxide.png", "644"],
-    ["packaging/icons/sdroxide-128.png", "usr/share/icons/hicolor/128x128/apps/sdroxide.png", "644"],
-    ["packaging/icons/sdroxide-256.png", "usr/share/icons/hicolor/256x256/apps/sdroxide.png", "644"],
-    ["packaging/icons/sdroxide-512.png", "usr/share/icons/hicolor/512x512/apps/sdroxide.png", "644"],
-    ["README.md", "usr/share/doc/sdroxide/README.md", "644"],
+    ["target/release/sdro", "usr/bin/", "755"],
+    ["packaging/linux/sdro.desktop", "usr/share/applications/", "644"],
+    ["packaging/linux/60-sdro-rtlsdr.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/linux/60-sdro-rx888.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/linux/60-sdro-airspyhf.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/linux/60-sdro-hackrf.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/linux/60-sdro-airspy.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/linux/60-sdro-hydrasdr.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/linux/60-sdro-elad.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/linux/60-sdro-limerfe.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/linux/60-sdro-relay.rules", "usr/lib/udev/rules.d/", "644"],
+    ["packaging/icons/sdro.svg", "usr/share/icons/hicolor/scalable/apps/sdro.svg", "644"],
+    ["packaging/icons/sdro-16.png", "usr/share/icons/hicolor/16x16/apps/sdro.png", "644"],
+    ["packaging/icons/sdro-24.png", "usr/share/icons/hicolor/24x24/apps/sdro.png", "644"],
+    ["packaging/icons/sdro-32.png", "usr/share/icons/hicolor/32x32/apps/sdro.png", "644"],
+    ["packaging/icons/sdro-48.png", "usr/share/icons/hicolor/48x48/apps/sdro.png", "644"],
+    ["packaging/icons/sdro-64.png", "usr/share/icons/hicolor/64x64/apps/sdro.png", "644"],
+    ["packaging/icons/sdro-128.png", "usr/share/icons/hicolor/128x128/apps/sdro.png", "644"],
+    ["packaging/icons/sdro-256.png", "usr/share/icons/hicolor/256x256/apps/sdro.png", "644"],
+    ["packaging/icons/sdro-512.png", "usr/share/icons/hicolor/512x512/apps/sdro.png", "644"],
+    ["README.md", "usr/share/doc/sdro/README.md", "644"],
     # The speech voice, for the spoken-announcement feature. A separate data
     # file rather than something linked into the binary: it is CC BY-NC-SA,
     # which is not a licence a GPL program may absorb, and keeping it an
     # aggregated asset that the program merely reads is what keeps the two
     # apart. Its notice ships alongside, like the RX-888 firmware's below.
-    ["assets/voices/en_US-hfc_female-medium.onnx", "usr/share/sdroxide/voices/", "644"],
-    ["assets/voices/en_US-hfc_female-medium.onnx.json", "usr/share/sdroxide/voices/", "644"],
-    ["assets/voices/en_US-hfc_female-medium.MODEL_CARD", "usr/share/sdroxide/voices/", "644"],
-    ["assets/voices/LICENSE-voice.txt", "usr/share/doc/sdroxide/LICENSE-voice.txt", "644"],
+    ["assets/voices/en_US-hfc_female-medium.onnx", "usr/share/sdro/voices/", "644"],
+    ["assets/voices/en_US-hfc_female-medium.onnx.json", "usr/share/sdro/voices/", "644"],
+    ["assets/voices/en_US-hfc_female-medium.MODEL_CARD", "usr/share/sdro/voices/", "644"],
+    ["assets/voices/LICENSE-voice.txt", "usr/share/doc/sdro/LICENSE-voice.txt", "644"],
     # CMUdict (BSD-2-Clause) is embedded in the binary for grapheme-to-phoneme.
-    ["crates/sdroxide-speech/assets/LICENSE-cmudict.txt", "usr/share/doc/sdroxide/LICENSE-cmudict.txt", "644"],
+    ["crates/sdro-speech/assets/LICENSE-cmudict.txt", "usr/share/doc/sdro/LICENSE-cmudict.txt", "644"],
     # The binary embeds the RX-888's FX3 firmware image, which is MIT licensed
     # rather than GPL like the rest: its notice has to ship with the package.
-    ["crates/sdroxide-rx888/firmware/LICENSE.txt", "usr/share/doc/sdroxide/LICENSE-rx888-firmware.txt", "644"],
+    ["crates/sdro-rx888/firmware/LICENSE.txt", "usr/share/doc/sdro/LICENSE-rx888-firmware.txt", "644"],
     # The DeepCW model, embedded for the CW decoder. AGPL-3.0-only, which is
     # stronger than this package's GPL and carries a network clause, so its
     # notice ships too — and unlike the ones above it constrains the package
     # rather than merely crediting a part of it.
-    ["crates/sdroxide-deepcw/LICENSE", "usr/share/doc/sdroxide/LICENSE-deepcw.txt", "644"],
+    ["crates/sdro-deepcw/LICENSE", "usr/share/doc/sdro/LICENSE-deepcw.txt", "644"],
 ]
 
 # SoapySDR .deb: links libSoapySDR, so recommend the driver modules (apt
 # installs Recommends by default). Built with `cargo deb --variant soapysdr`.
 [package.metadata.deb.variants.soapysdr]
-name = "sdroxide-soapysdr"
+name = "sdro-soapysdr"
 recommends = "soapysdr-module-all"
 extended-description = """\
 PowerSDR/Thetis-style software-defined-radio transceiver client built on \

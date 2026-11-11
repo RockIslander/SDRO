@@ -33,7 +33,7 @@ The FDK licence permits redistribution of source and binaries, but it forbids
 charging a copyright licence fee and it grants **no patent licence at all**.
 Both are restrictions the GNU GPL does not permit to be added, which is why
 Debian ships `libfdk-aac2` in `non-free` and why ffmpeg has to be built
-`--enable-nonfree` to use it. sdroxide is GPL-3.0-or-later, so a binary with
+`--enable-nonfree` to use it. sdro is GPL-3.0-or-later, so a binary with
 FDK-AAC linked into it could not be distributed.
 
 So it is not linked. `vendor/dream/src/sourcedecoders/fdk_aac_dll.h` loads the
@@ -41,7 +41,7 @@ seven decoder entry points through `CLibraryLoader` at run time, the way Dream
 already loads libopus, and `FdkAacCodec::CanDecode` answers `false` when there
 is no library — which leaves an xHE-AAC service falling back to Dream's null
 codec, exactly where this build stood before. **No Fraunhofer object code is
-produced by this build**, and `crates/sdroxide-drm/build.rs` emits no
+produced by this build**, and `crates/sdro-drm/build.rs` emits no
 `-lfdk-aac`.
 
 ## Why headers rather than hand-written declarations

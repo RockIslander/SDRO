@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Write a .tar.gz that depends on nothing but the files in it:
 #
-#   packaging/reproducible-tar.sh out/NAME.tar.gz stage sdroxide
+#   packaging/reproducible-tar.sh out/NAME.tar.gz stage sdro
 #
-# packs `stage/sdroxide` as `sdroxide/...`. Entries are sorted, owned by root,
+# packs `stage/sdro` as `sdro/...`. Entries are sorted, owned by root,
 # stamped with SOURCE_DATE_EPOCH (from packaging/reproducible-env.sh) and
 # carry normalised permissions; gzip leaves out its own name-and-time header.
 #

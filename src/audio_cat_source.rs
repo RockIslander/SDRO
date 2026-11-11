@@ -1,14 +1,14 @@
 //! An [`IqSource`] for a CAT-controlled rig whose audio arrives over a USB
 //! sound card: control (frequency/mode/PTT) goes over serial via
-//! [`sdroxide_cat`], RX audio comes from the radio's capture device, and TX
+//! [`sdro_cat`], RX audio comes from the radio's capture device, and TX
 //! audio goes to the radio's playback device. Two sound formats are supported:
 //! stereo **IQ** (complex baseband → normal engine path) and mono **demod
 //! audio** (real → the engine's audio-band bypass, `DeviceCaps.audio_mode`).
 
-use sdroxide_dsp::{IqCorrect, MonoResampler, Nco};
-use sdroxide_radio::rtrb;
-use sdroxide_radio::{Complex32, ControlUpdate, DC_BLOCK_HZ, IqSource, Result};
-use sdroxide_types::{
+use sdro_dsp::{IqCorrect, MonoResampler, Nco};
+use sdro_radio::rtrb;
+use sdro_radio::{Complex32, ControlUpdate, DC_BLOCK_HZ, IqSource, Result};
+use sdro_types::{
     AgcMode, CatConfig, CatFamily, Mode, SoundFormat, TRUSDX_RX_RATE_HZ, TRUSDX_TX_RATE_HZ,
     TrUsdxAudio, TxTelemetry,
 };
@@ -19,7 +19,7 @@ pub struct AudioCatSource {
     // RX audio from the rig (mono for demod, interleaved L/R for IQ). `None`
     // when the capture device could not be opened — the app still runs so the
     // user can fix the device in Settings; RX is just silent until then.
-    in_stream: Option<sdroxide_audio::AudioInput>,
+    in_stream: Option<sdro_audio::AudioInput>,
     in_consumer: rtrb::Consumer<f32>,
     in_rate: f64,
     /// Capture frames the sound card had to throw away, and when that was last
@@ -54,7 +54,7 @@ pub struct AudioCatSource {
     audio_bw: f64,
 
     // TX audio to the rig (interleaved stereo playback ring).
-    out: Option<(sdroxide_audio::AudioOutput, rtrb::Producer<f32>)>,
+    out: Option<(sdro_audio::AudioOutput, rtrb::Producer<f32>)>,
     tx_resampler: Option<MonoResampler>,
     tx_scratch: Vec<f32>,
     /// Amplitude applied to the TX audio on a rig whose power is set by the
@@ -67,7 +67,7 @@ pub struct AudioCatSource {
     /// [`IqSource::streams_audio`] — the (tr)uSDX.
     stream_scratch: Vec<f32>,
 
-    cat: sdroxide_cat::CatHandle,
+    cat: sdro_cat::CatHandle,
     /// Top of the `27 00` amplitude scale on the rig the model list names —
     /// 160 on the IC-7300 generation, 200 on an IC-7760. Taken at open, since
     /// the model cannot change under a session.
@@ -80,7 +80,7 @@ pub struct AudioCatSource {
     /// Whether the rig has ever answered its control port, and so whether its
     /// dial is something this end can move at all. Seeded from the startup
     /// query and latched on by the first thing the rig says afterwards, so a
-    /// radio switched on after sdroxide is picked up rather than left out for
+    /// radio switched on after sdro is picked up rather than left out for
     /// the session. See [`IqSource::center_is_dial`].
     dial_reachable: bool,
     label: String,
@@ -101,7 +101,7 @@ pub struct AudioCatSource {
     /// How long the reading above stands in for the next one. Derived from the
     /// configured poll rate rather than fixed, because that rate is what sets
     /// the gap between two honest answers: a window shorter than it would blank
-    /// the needle between every pair of them. See `sdroxide_cat::signal_max_age`.
+    /// the needle between every pair of them. See `sdro_cat::signal_max_age`.
     signal_max_age: std::time::Duration,
     /// Which antenna socket the rig says its receiver is on, for the one family
     /// that has two (an ELAD FDM-DUO's `AN`). Empty on every other rig, where
@@ -134,7 +134,7 @@ impl AudioCatSource {
         // Whether anything answered at all is kept too: it is the only evidence
         // there is that there *is* a control link, and the whole shape of
         // tuning hangs on it — see [`IqSource::center_is_dial`].
-        let reply = sdroxide_cat::query_once(&cfg);
+        let reply = sdro_cat::query_once(&cfg);
         let dial_reachable = reply.is_some();
         let (init_freq, _init_mode) = reply.unwrap_or((None, None));
         let center = init_freq.unwrap_or(14_074_000.0);
@@ -150,7 +150,7 @@ impl AudioCatSource {
                  default, which is not this radio unless it happens to be the default. Pick its \
                  card under Settings → Radio → Radio audio.",
                 cfg.family.label(),
-                sdroxide_cat::link_label(&cfg),
+                sdro_cat::link_label(&cfg),
                 match (audio_in.is_none(), audio_out.is_none()) {
                     (true, true) => "receive and transmit",
                     (true, false) => "receive",
@@ -167,8 +167,8 @@ impl AudioCatSource {
         // inside the radio's own filter, so a faster card would only digitise
         // more silence either side of it.
         let opened = match cfg.format {
-            SoundFormat::Iq => sdroxide_audio::start_input_stereo(audio_in, cfg.iq_rate_hz),
-            SoundFormat::DemodAudio => sdroxide_audio::start_input_buffered(audio_in, 48_000),
+            SoundFormat::Iq => sdro_audio::start_input_stereo(audio_in, cfg.iq_rate_hz),
+            SoundFormat::DemodAudio => sdro_audio::start_input_buffered(audio_in, 48_000),
         };
         let dev_label = audio_in.unwrap_or("system default");
         // A dummy, always-empty ring keeps `read` returning silence when RX is
@@ -215,10 +215,10 @@ impl AudioCatSource {
         };
 
         // TX playback is best-effort: a missing device just means no TX audio.
-        let (out, out_status) = match sdroxide_audio::start_output(
+        let (out, out_status) = match sdro_audio::start_output(
             audio_out,
             48_000,
-            sdroxide_types::AudioRouting::Both,
+            sdro_types::AudioRouting::Both,
         ) {
             Ok((o, p)) => {
                 let status = o.swap.as_ref().map(|sw| {
@@ -255,7 +255,7 @@ impl AudioCatSource {
         };
 
         let label =
-            format!("CAT rig ({}) on {}", cfg.family.label(), sdroxide_cat::link_label(&cfg));
+            format!("CAT rig ({}) on {}", cfg.family.label(), sdro_cat::link_label(&cfg));
         let audio_bw = cfg.audio_bw_hz;
         let format = cfg.format;
         // Said out loud at open: a mirrored panadapter looks like a working one
@@ -308,24 +308,24 @@ impl AudioCatSource {
         }
         // Read before the config goes to the CAT thread: how long an S-meter
         // reading stands in for the next one follows the rate that thread polls
-        // at (see `sdroxide_cat::signal_max_age`).
-        let signal_max_age = sdroxide_cat::signal_max_age(&cfg);
+        // at (see `sdro_cat::signal_max_age`).
+        let signal_max_age = sdro_cat::signal_max_age(&cfg);
         // Either sound format: even an IQ-format rig transmits what arrives at
         // its sound card, so MCW rides a sideband there too.
-        let cw_mcw = sdroxide_cat::effective_cw_keying(&cfg) == sdroxide_types::CwKeying::Audio;
+        let cw_mcw = sdro_cat::effective_cw_keying(&cfg) == sdro_types::CwKeying::Audio;
         // The scope, asked for on a link its sweeps do not fit down, is
         // declined rather than allowed to bury the polls and the PTT — and
         // that has to be said on screen, because nothing else explains a
         // panadapter that stayed narrow with the box ticked.
         let status = if cfg.scope
-            && cfg.family == sdroxide_types::CatFamily::Icom
-            && !sdroxide_cat::scope_active(&cfg)
+            && cfg.family == sdro_types::CatFamily::Icom
+            && !sdro_cat::scope_active(&cfg)
         {
             let note = format!(
                 "The rig scope needs a {} baud CI-V link and this one is set to {}. On the \
                  radio set CI-V USB Baud Rate to 115200 and CI-V USB Port to \"Unlink from \
                  [REMOTE]\", then match the baud rate here.",
-                sdroxide_types::CAT_SCOPE_MIN_BAUD,
+                sdro_types::CAT_SCOPE_MIN_BAUD,
                 cfg.serial.baud
             );
             tracing::warn!("{note}");
@@ -349,7 +349,7 @@ impl AudioCatSource {
                  itself and type its dial frequency here to line the panadapter up. If you do \
                  have a control cable, check the port, baud rate and CAT family under \
                  Settings → Radio.",
-                sdroxide_cat::link_label(&cfg),
+                sdro_cat::link_label(&cfg),
             );
             tracing::warn!("{note}");
             Some(match status {
@@ -362,7 +362,7 @@ impl AudioCatSource {
         // Read off the model before the configuration is handed to the link,
         // which takes it by value.
         let scope_full_scale = f32::from(cfg.icom_model.scope_full_scale());
-        let cat = sdroxide_cat::spawn(cfg);
+        let cat = sdro_cat::spawn(cfg);
 
         Ok(AudioCatSource {
             in_stream,
@@ -415,11 +415,11 @@ impl AudioCatSource {
     /// kills it (see `trusdx::TrUsdx::poll_requests`). So the dial below is
     /// where the band starts rather than where the radio is, and the first
     /// tune from here is what puts the two in step. The settings note says as
-    /// much: in this mode the radio is driven from sdroxide, not followed.
+    /// much: in this mode the radio is driven from sdro, not followed.
     fn open_streamed(cfg: CatConfig) -> anyhow::Result<Self> {
-        let cat = sdroxide_cat::spawn(cfg.clone());
-        let signal_max_age = sdroxide_cat::signal_max_age(&cfg);
-        let label = format!("(tr)uSDX on {}", sdroxide_cat::link_label(&cfg));
+        let cat = sdro_cat::spawn(cfg.clone());
+        let signal_max_age = sdro_cat::signal_max_age(&cfg);
+        let label = format!("(tr)uSDX on {}", sdro_cat::link_label(&cfg));
         let status = Some(
             "Audio and control share the USB cable — no sound card is used. The radio \
              reboots when the port opens, so the first second or two after connecting is \
@@ -448,7 +448,7 @@ impl AudioCatSource {
             stream_scratch: Vec::new(),
             cat,
             scope_full_scale: 160.0,
-            cw_mcw: sdroxide_cat::effective_cw_keying(&cfg) == sdroxide_types::CwKeying::Audio,
+            cw_mcw: sdro_cat::effective_cw_keying(&cfg) == sdro_types::CwKeying::Audio,
             // Where the band starts, not where the radio is — nothing reads
             // the radio's dial in this mode. The first tune commands it.
             dial: Dial::at(14_074_000.0),
@@ -526,7 +526,7 @@ impl AudioCatSource {
             SoundFormat::Iq => "Try a lower I/Q sample rate under Settings → Radio.",
             SoundFormat::DemodAudio => {
                 "This card is fixed at 48 kHz, so there is no rate to lower — look instead at \
-                 what else on this machine is keeping sdroxide off the CPU."
+                 what else on this machine is keeping sdro off the CPU."
             }
         };
         // The window is measured, not assumed: reporting a fixed 5 s after a
@@ -630,7 +630,7 @@ const QUAD_DEAD_RATIO: f32 = 1e-4;
 /// Watches the two capture channels for the one arrangement that cannot work:
 /// a stream declared as I/Q whose channels are not in quadrature.
 ///
-/// The commonest way to get one is to point sdroxide at a radio's *demodulated*
+/// The commonest way to get one is to point sdro at a radio's *demodulated*
 /// audio and tell it the card carries I/Q. A demodulated channel is one real
 /// signal, and a stereo cable carries it twice — so `I` and `Q` are the same
 /// numbers, the complex stream they build is that real signal at 45°, and its
@@ -760,8 +760,8 @@ fn quadrature_complaint(v: QuadVerdict) -> Option<&'static str> {
 }
 
 /// The corrector a given configuration asks for, or `None` when it asks for
-/// nothing — see [`sdroxide_types::CatConfig::iq_correction`] and
-/// [`sdroxide_types::CatConfig::iq_dc_block_hz`].
+/// nothing — see [`sdro_types::CatConfig::iq_correction`] and
+/// [`sdro_types::CatConfig::iq_dc_block_hz`].
 ///
 /// The two settings are not independent in one direction: an uncorrected DC
 /// offset multiplies straight into the correlation the imbalance loop measures,
@@ -770,7 +770,7 @@ fn quadrature_complaint(v: QuadVerdict) -> Option<&'static str> {
 /// The reverse pairing is a real choice and is honoured: DC alone, with the
 /// loop that a mirror-symmetric band can mislead left out of circuit.
 fn build_correction(
-    cfg: &sdroxide_types::CatConfig,
+    cfg: &sdro_types::CatConfig,
     format: SoundFormat,
     rate: f64,
 ) -> Option<IqCorrect> {
@@ -779,7 +779,7 @@ fn build_correction(
     if !matches!(format, SoundFormat::Iq) {
         return None;
     }
-    let notch = cfg.iq_dc_block_hz.clamp(0.0, sdroxide_types::CAT_IQ_DC_BLOCK_MAX_HZ);
+    let notch = cfg.iq_dc_block_hz.clamp(0.0, sdro_types::CAT_IQ_DC_BLOCK_MAX_HZ);
     match (cfg.iq_correction, notch > 0.0) {
         (false, false) => None,
         (false, true) => Some(IqCorrect::dc_only(notch, rate)),
@@ -789,10 +789,10 @@ fn build_correction(
 
 /// Drain interleaved (I, Q) pairs from the capture ring into `buf`, with the
 /// right channel scaled by `q_sign` — `-1.0` conjugates the stream, mirroring
-/// the spectrum about the dial (see [`sdroxide_types::CatConfig::invert_spectrum`])
+/// the spectrum about the dial (see [`sdro_types::CatConfig::invert_spectrum`])
 /// — the result run through `correct` to take out the front end's DC and mirror
 /// image, and then mixed by `shift` when the rig's I.F. is not on its dial
-/// (see [`sdroxide_types::CatConfig::iq_offset_hz`]).
+/// (see [`sdro_types::CatConfig::iq_offset_hz`]).
 ///
 /// The three are in that order because they undo the radio in the order the
 /// radio applied it. Which wire carries Q decides what the stream *means*, and
@@ -922,7 +922,7 @@ impl IqSource for AudioCatSource {
     /// With no dial to command, the span the rig *is* sending is the whole of
     /// the radio, and the engine tunes inside it with its own DDC exactly as it
     /// does on an SDR. Typing a frequency still moves the centre, which is how
-    /// the operator tells sdroxide where they have left the radio's own dial.
+    /// the operator tells sdro where they have left the radio's own dial.
     fn center_is_dial(&self) -> bool {
         self.dial_reachable
     }
@@ -931,7 +931,7 @@ impl IqSource for AudioCatSource {
     ///
     /// Demod audio reaches this through `DeviceCaps::audio_mode` — there is no
     /// demodulator on this side at all — but a rig sending quadrature does not:
-    /// its stream is ordinary complex baseband and sdroxide demodulates it, so
+    /// its stream is ordinary complex baseband and sdro demodulates it, so
     /// the engine's "command the rig's mode" gate never fired and the mode
     /// control moved nothing on the radio. Mode travelled rig→app on the CAT
     /// poll and never the other way, and the two readouts sat there disagreeing
@@ -942,12 +942,12 @@ impl IqSource for AudioCatSource {
     /// [`IqSource::commands_rx_mode`] rather than
     /// [`IqSource::tracks_rx_mode`]: nothing is imposed when the port opens.
     /// This source adopts the mode the rig is already sitting on (see
-    /// `sdroxide_cat::query_once`), and rearranging somebody's radio out of a
+    /// `sdro_cat::query_once`), and rearranging somebody's radio out of a
     /// restored session is not what connecting to it should do.
     ///
     /// The *filter* is not pushed with it, and must not be: the engine guards
     /// that separately on whether the rig is the one doing the receiving, and
-    /// here it is not — the width the operator sets belongs to sdroxide's own
+    /// here it is not — the width the operator sets belongs to sdro's own
     /// demodulator, and sending it would narrow the radio's IF against a
     /// passband it is not carrying.
     fn commands_rx_mode(&self) -> bool {
@@ -1062,7 +1062,7 @@ impl IqSource for AudioCatSource {
         matches!(self.format, SoundFormat::DemodAudio).then_some(self.audio_bw)
     }
 
-    /// The rig's own scope, when [`sdroxide_types::CatConfig::scope`] streams
+    /// The rig's own scope, when [`sdro_types::CatConfig::scope`] streams
     /// it over the serial link — the same `27 00` sweeps, and the same two
     /// lanes, as the Icom LAN backend: the full-band strip always, and on the
     /// demod-audio path the *main* panadapter too (the engine decides — see
@@ -1092,7 +1092,7 @@ impl IqSource for AudioCatSource {
         let updates = self.cat.poll();
         // Anything at all from the rig is also the answer to "is there a radio
         // on the control port": a link that only came up later — the operator
-        // switched the radio on, or plugged the cable in, after sdroxide
+        // switched the radio on, or plugged the cable in, after sdro
         // started — hands its dial back here. Latched rather than tracked,
         // because a rig that has gone quiet for a poll or two is still a rig
         // whose dial we own, and flipping the panadapter's whole tuning
@@ -1103,40 +1103,40 @@ impl IqSource for AudioCatSource {
                 // The dial is not the VFO — it carries RIT, and for the length
                 // of an over it carries XIT/split instead — so a report has to
                 // be folded back before the engine sees it as a dial move.
-                sdroxide_cat::CatUpdate::Freq(hz) => {
+                sdro_cat::CatUpdate::Freq(hz) => {
                     if let Some(vfo) = self.dial.report(hz) {
                         out.push(ControlUpdate::Freq(vfo));
                     }
                 }
-                sdroxide_cat::CatUpdate::Mode(m) => out.push(ControlUpdate::Mode(m)),
+                sdro_cat::CatUpdate::Mode(m) => out.push(ControlUpdate::Mode(m)),
                 // Which antenna socket the rig is receiving on, read once when
                 // the port opened — the same shape as the power below, and
                 // adopted for the same reason: the operator set it on the radio
                 // and the radio is where it survived a power cycle.
-                sdroxide_cat::CatUpdate::Antenna(name) => {
+                sdro_cat::CatUpdate::Antenna(name) => {
                     self.antenna = name.to_string();
                     out.push(ControlUpdate::Antenna(name));
                 }
                 // The receiving antenna, from the same reply — read when the
                 // port opened and again after every band change, because the
                 // radio recalls it per band and this end never asserts it.
-                sdroxide_cat::CatUpdate::RxAntenna(on) => {
+                sdro_cat::CatUpdate::RxAntenna(on) => {
                     out.push(ControlUpdate::RxAntenna(on));
                 }
                 // The power the rig came up on, read once when the port opened.
                 // The engine adopts it into the Drive slider rather than
                 // commanding the rig back — the radio's own setting is the
                 // operator's, not a stale one to overwrite.
-                sdroxide_cat::CatUpdate::Power(frac) => out.push(ControlUpdate::TxDrive(frac)),
+                sdro_cat::CatUpdate::Power(frac) => out.push(ControlUpdate::TxDrive(frac)),
                 // And the squelch it came up on, read at the same moment and
                 // adopted the same way. On demod audio this is the gate the
                 // operator actually hears, so the rail has to start where the
                 // radio's knob already is.
-                sdroxide_cat::CatUpdate::Squelch(frac) => out.push(ControlUpdate::Squelch(frac)),
+                sdro_cat::CatUpdate::Squelch(frac) => out.push(ControlUpdate::Squelch(frac)),
                 // The operator keyed the radio itself — mic button, foot
                 // switch, VOX, its own keyer. Passed up as the thing it is, not
                 // as a request to transmit: see `ControlUpdate::RigTx`.
-                sdroxide_cat::CatUpdate::Ptt(on) => {
+                sdro_cat::CatUpdate::Ptt(on) => {
                     // The SWR latched during that over belongs to that over.
                     // `tx_end` does this for one we keyed; nothing calls it for
                     // one we did not, and a stale ratio left on the meter would
@@ -1148,12 +1148,12 @@ impl IqSource for AudioCatSource {
                     out.push(ControlUpdate::RigTx(on));
                 }
                 // The meters arrive on their own telemetry channels, not here.
-                sdroxide_cat::CatUpdate::Swr(_)
-                | sdroxide_cat::CatUpdate::Alc(_)
-                | sdroxide_cat::CatUpdate::Po(_)
-                | sdroxide_cat::CatUpdate::FwdW(_)
-                | sdroxide_cat::CatUpdate::RflW(_)
-                | sdroxide_cat::CatUpdate::Signal(_) => {}
+                sdro_cat::CatUpdate::Swr(_)
+                | sdro_cat::CatUpdate::Alc(_)
+                | sdro_cat::CatUpdate::Po(_)
+                | sdro_cat::CatUpdate::FwdW(_)
+                | sdro_cat::CatUpdate::RflW(_)
+                | sdro_cat::CatUpdate::Signal(_) => {}
             }
         }
         out
@@ -1259,11 +1259,11 @@ impl IqSource for AudioCatSource {
         self.cat.set_squelch(frac);
     }
 
-    /// True on a family whose squelch sdroxide can address — but only while the
+    /// True on a family whose squelch sdro can address — but only while the
     /// rig is the one doing the demodulating.
     ///
     /// On quadrature it is the wrong gate entirely: the stream is raw baseband,
-    /// sdroxide demodulates it, and the radio's squelch decides nothing but
+    /// sdro demodulates it, and the radio's squelch decides nothing but
     /// what comes out of the radio's own speaker. There the engine's own
     /// threshold is the honest one, and handing the SQL rail to a control that
     /// does not reach the audio would be the same fault the other way round.
@@ -1759,7 +1759,7 @@ mod tests {
     /// where they did not.
     #[test]
     fn the_two_settings_pick_the_corrector() {
-        let cat = |correction: bool, notch: f64| sdroxide_types::CatConfig {
+        let cat = |correction: bool, notch: f64| sdro_types::CatConfig {
             iq_correction: correction,
             iq_dc_block_hz: notch,
             ..Default::default()

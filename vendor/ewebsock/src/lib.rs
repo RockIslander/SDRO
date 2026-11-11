@@ -157,7 +157,7 @@ pub struct Options {
     /// The TLS client configuration for `wss://`, in place of the one
     /// tungstenite builds for itself (the webpki roots, nothing else).
     ///
-    /// Added by sdroxide's patch, not upstream: it is how a client can accept
+    /// Added by sdro's patch, not upstream: it is how a client can accept
     /// a server's self-signed certificate it has been told to trust, which
     /// the default configuration has no way to express.
     ///

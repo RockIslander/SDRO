@@ -53,7 +53,7 @@ version = "0.4"
 
 [features]
 default = []
-# `dep:rustls` added by sdroxide's patch, for `Options::tls_config`.
+# `dep:rustls` added by sdro's patch, for `Options::tls_config`.
 tls = ["tungstenite/rustls-tls-webpki-roots", "dep:rustls"]
 tokio = [
     "dep:async-stream",
@@ -92,7 +92,7 @@ optional = true
 version = ">=0.23, <=0.24"
 optional = true
 
-# Added by sdroxide's patch: the type `Options::tls_config` carries. The same
+# Added by sdro's patch: the type `Options::tls_config` carries. The same
 # 0.23 tungstenite links, so the configuration handed in is the one it takes.
 [target."cfg(not(target_arch = \"wasm32\"))".dependencies.rustls]
 version = "0.23"

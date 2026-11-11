@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Write a .zip that depends on nothing but the files in it:
 #
-#   packaging/reproducible-zip.sh out/NAME.zip stage sdroxide
+#   packaging/reproducible-zip.sh out/NAME.zip stage sdro
 #
-# packs `stage/sdroxide` as `sdroxide/...`, the zip counterpart of
+# packs `stage/sdro` as `sdro/...`, the zip counterpart of
 # reproducible-tar.sh. Every file is stamped with SOURCE_DATE_EPOCH (from
 # packaging/reproducible-env.sh), entries go in sorted order, directories get
 # no entries of their own, and Info-ZIP's -X leaves out the extra fields that

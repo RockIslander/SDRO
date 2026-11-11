@@ -44,9 +44,9 @@ enables. With it set, `src/native_tungstenite.rs` dials through
 `connect_with_tls` — tungstenite's own `connect_with_config`, step for step,
 with the rustls connector named instead of defaulted, which upstream tungstenite
 has no blocking entry point for. Without it, the upstream call is made exactly
-as before. The `tokio` client ignores the option. It is how sdroxide's remote
+as before. The `tokio` client ignores the option. It is how sdro's remote
 client accepts a station's self-signed certificate once the operator has
-trusted it (issue #736); see `crates/sdroxide-ui/src/remote_tls.rs`.
+trusted it (issue #736); see `crates/sdro-ui/src/remote_tls.rs`.
 
 ## Why the patch exists
 
@@ -64,19 +64,19 @@ timeout. Rust has no `ErrorKind` for it, so it arrives as an uncategorised I/O
 error and upstream treats it as the connection failing.
 
 Nothing has failed. The socket reads normally on the next attempt. But a client
-polling at 100 Hz on four sockets meets it eventually, which is what sdroxide's
+polling at 100 Hz on four sockets meets it eventually, which is what sdro's
 Windows remote clients saw after ten to thirty minutes:
 
 ```
 read: IO error: An overlapping I/O operation is in progress.. (os error 997)
 ```
 
-— the whole session gone, and a **Reconnect** button to press. (sdroxide now
+— the whole session gone, and a **Reconnect** button to press. (sdro now
 redials by itself when a link drops, which covers this and everything else that
 can drop one; this is what stops the drop happening at all.)
 
 The counter is the other half of the patch and is there because ignoring an
-error is only safe while it stays transient. sdroxide sends no keepalive, so a
+error is only safe while it stays transient. sdro sends no keepalive, so a
 socket that answered nothing but 997 for ever would present as a frozen window
 rather than as a lost connection — worse than the bug. A thousand in a row, some
 ten seconds at the default timeout, is far beyond anything a live connection
@@ -89,5 +89,5 @@ Both changes have to be upstream first. When upstream classifies
 its own `read_timeout` docs call a TODO — *and* takes a rustls configuration
 (or a tungstenite `Connector`) of the caller's, delete `vendor/ewebsock`, drop
 the `ewebsock` line from `[patch.crates-io]` and from the workspace `exclude`,
-bump the version in `crates/sdroxide-ui/Cargo.toml` to whatever carries both,
+bump the version in `crates/sdro-ui/Cargo.toml` to whatever carries both,
 and point `remote_tls::options_for` at upstream's option.

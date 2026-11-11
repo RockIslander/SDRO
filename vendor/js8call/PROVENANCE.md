@@ -1,14 +1,14 @@
 # JS8 protocol constants — provenance
 
-Every JS8 constant in `crates/sdroxide-digi/src/js8/` is transcribed from the
+Every JS8 constant in `crates/sdro-digi/src/js8/` is transcribed from the
 JS8Call source, not reconstructed. This file records where each one came from,
 so a future reader can re-derive any of them without guessing.
 
 **Upstream:** <https://github.com/js8call/js8call>
 **Commit:** `a7ff1be0b389d287fdc56e2ea0d06962aa68127d` (2025-12-05)
-**License:** GPL-3.0-or-later — compatible with sdroxide, which is GPL-3.0-or-later
-because `sdroxide-digi` links `mfsk-core`. Everything derived from JS8Call lives
-in `sdroxide-digi` for the same reason: the permissive crates and the wasm client
+**License:** GPL-3.0-or-later — compatible with sdro, which is GPL-3.0-or-later
+because `sdro-digi` links `mfsk-core`. Everything derived from JS8Call lives
+in `sdro-digi` for the same reason: the permissive crates and the wasm client
 must link none of it.
 
 Paths below are relative to a JS8Call checkout.
@@ -115,13 +115,13 @@ column weight uniformly 3). Both assertions run as unit tests in `js8/ldpc.rs`.
 These are necessary but not sufficient — they prove the tables are
 self-consistent, not that they are JS8's. The sufficient evidence is below:
 frames JS8Call's own decoder reads, and vectors its own encoder produced
-(`crates/sdroxide-digi/tests/js8_varicode.rs`).
+(`crates/sdro-digi/tests/js8_varicode.rs`).
 
 ## Transmit verified against JS8Call's decoder
 
 JS8Call's standalone decoder (`js8 -8 -b <A|B|C|E> -d 3 <file.wav>`, from the
 2.2.0 package) was run against WAVs written by
-`cargo run -p sdroxide-digi --example js8_wav -- encode …`:
+`cargo run -p sdro-digi --example js8_wav -- encode …`:
 
 | Speed | Submode | Combinations | Exact |
 |---|---|---|---|
@@ -163,9 +163,9 @@ three seeds per point:
 
 | Speed | amp 0.030 | 0.022 | 0.016 | 0.012 | 0.008 |
 |---|---|---|---|---|---|
-| Normal — sdroxide | 3/3 | 3/3 | 3/3 | 2/3 | 0/3 |
+| Normal — sdro | 3/3 | 3/3 | 3/3 | 2/3 | 0/3 |
 | Normal — JS8Call | 3/3 | 3/3 | 3/3 | 2/3 | 0/3 |
-| Slow — sdroxide | 3/3 | 3/3 | 3/3 | 3/3 | 0/3 |
+| Slow — sdro | 3/3 | 3/3 | 3/3 | 3/3 | 0/3 |
 | Slow — JS8Call | 3/3 | 3/3 | 3/3 | 3/3 | 0/3 |
 
 Identical thresholds, and at Normal 0.012 both fail on the *same* seed.
@@ -203,7 +203,7 @@ filter rather than the band, and compressed a 30 dB span into 8 dB.
 
 `tools/gen_js8_varicode_vectors.sh` compiles JS8Call's own `varicode.cpp`
 (plus `jsc.cpp` and the dictionary) against Qt6 and runs it, emitting
-`crates/sdroxide-digi/tests/js8_varicode_vectors.rs`. The expected values in the
+`crates/sdro-digi/tests/js8_varicode_vectors.rs`. The expected values in the
 message-layer tests are therefore produced by the reference implementation, not
 by a second reading of it — which matters here more than anywhere else in the
 mode, because none of this encoding is derivable: it carries per-country
@@ -297,14 +297,14 @@ once, on the winner; so do we, with a hard-error ceiling as a second net.
 ## Regenerating any of this
 
 None of the generators run during a normal build — their output is committed, so
-neither Python, Qt nor a JS8Call checkout is needed to compile sdroxide. Run
+neither Python, Qt nor a JS8Call checkout is needed to compile sdro. Run
 them only when the upstream commit above changes:
 
 ```sh
 python3 tools/gen_js8_ldpc.py ~/Development/js8call
 python3 tools/gen_js8_jsc.py  ~/Development/js8call
 ./tools/gen_js8_varicode_vectors.sh ~/Development/js8call \
-    > crates/sdroxide-digi/tests/js8_varicode_vectors/mod.rs
+    > crates/sdro-digi/tests/js8_varicode_vectors/mod.rs
 ```
 
 The first two refuse to emit anything that fails their internal cross-checks;
@@ -314,8 +314,8 @@ Generated artefacts, all committed:
 
 | File | From |
 |---|---|
-| `crates/sdroxide-digi/src/js8/ldpc_tables.rs` | `JS8.cpp` Mn/Nm/generator |
-| `crates/sdroxide-digi/src/js8/jsc_dict.bin` | `jsc_map.cpp` (1.0 MB deflated) |
-| `crates/sdroxide-digi/tests/js8_varicode_vectors/mod.rs` | `varicode.cpp`, linked and run |
+| `crates/sdro-digi/src/js8/ldpc_tables.rs` | `JS8.cpp` Mn/Nm/generator |
+| `crates/sdro-digi/src/js8/jsc_dict.bin` | `jsc_map.cpp` (1.0 MB deflated) |
+| `crates/sdro-digi/tests/js8_varicode_vectors/mod.rs` | `varicode.cpp`, linked and run |
 
 

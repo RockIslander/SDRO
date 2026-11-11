@@ -1,4 +1,4 @@
-# SDR Oxide
+# SDRO
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7J0271P9Q)
 
 A PowerSDR/Thetis-style software-defined-radio transceiver client in Rust, with
@@ -29,7 +29,7 @@ built-in, and **TCI and Hamlib rigctld servers** so third-party programs like WS
 One binary, three ways to run it:
 
 - **Native** — a local desktop transceiver against your SDR hardware.
-- **Server** — `sdroxide --server`; the DSP runs on the machine with the radio
+- **Server** — `sdro --server`; the DSP runs on the machine with the radio
   and the full UI (plus audio and the waterfall) is served to a browser as
   WebAssembly. Every radio the station has is served, one client each: `/ws`
   and `/ws/<id>`, listed at `/radios`. Its roster is editable from a client
@@ -37,7 +37,7 @@ One binary, three ways to run it:
   again, without touching the machine or restarting it. On a phone or tablet it
   installs to the home screen and runs full screen, holding the screen awake
   while it is in front.
-- **Native remote** — `sdroxide --connect host:4950`; the desktop UI driving a
+- **Native remote** — `sdro --connect host:4950`; the desktop UI driving a
   remote server instead of local hardware. A station with several radios comes
   up with all of them, one tab each.
 
@@ -170,7 +170,7 @@ One binary, three ways to run it:
   manual for what this cannot do.
 - **Persistence** — device, rates, gains, memories, band stacks, the FT8/FT4/FT2
   operator profile, network/QSL credentials, control bindings, and the logbook
-  are all stored under `~/.config/sdroxide/`.
+  are all stored under `~/.config/sdro/`.
 
 ## FT8 / FT4 / FT2
 
@@ -207,7 +207,7 @@ paths rather than a conversation.
   (10–50% of slots) and the power you actually radiate, in watts — only the
   nineteen levels WSPR's message can name are offered, because that figure goes
   out on the air and everyone who hears you judges the path by it. The beacon
-  picks its slots from your callsign, so two stations running sdroxide do not
+  picks its slots from your callsign, so two stations running sdro do not
   transmit on top of each other, and it moves within the 200 Hz window each
   time. Callsign and grid come from Settings → General, like everywhere else.
 - **Band hopping** moves the dial between slots so one receiver samples the whole
@@ -381,7 +381,7 @@ left and a transmit compositor on the right:
 
 - **Receive** decodes incoming pictures scanline-by-scanline into the gallery;
   the VIS header sets the mode automatically (and pre-selects it for your next
-  transmit). Received images are saved under `~/.config/sdroxide/sstv_rx/`.
+  transmit). Received images are saved under `~/.config/sdro/sstv_rx/`.
   Slant is corrected automatically: lines are placed along a line fitted
   through the sync pulses, so a fade or a sender whose sound-card clock is off
   does not shear the picture, and once the picture is complete it is decoded
@@ -392,7 +392,7 @@ left and a transmit compositor on the right:
   mode's size. A multi-line message is overlaid on the image, **each line in a
   different font**, bold with a black outline; a live preview shows exactly what
   will be sent. Every transmitted image carries a small red→black header strip
-  with "SDRoxide" and the version. **TX** sends; **ABORT TX** stops.
+  with "SDRO" and the version. **TX** sends; **ABORT TX** stops.
 - **Modes:** Scottie 1 / 2 / DX, Martin 1 / 2, Robot 72, Robot 36. Band buttons
   tune to that band's SSTV calling frequency (e.g. 20 m = 14.230 MHz).
 
@@ -459,13 +459,13 @@ normal USB channel, occupying roughly 1060–1880 Hz of audio.
   faster than real time on a modern CPU, but the panel warns if the machine
   falls behind.
 
-`rade-harness` (in `crates/sdroxide-rade`) drives the same codec over files, for
+`rade-harness` (in `crates/sdro-rade`) drives the same codec over files, for
 bench testing without a radio:
 
 ```sh
-cargo run -p sdroxide-rade --bin rade-harness -- \
+cargo run -p sdro-rade --bin rade-harness -- \
     tx --input vendor/rade_c/wav/david_vk5dgr.wav --output modem8k.wav
-cargo run -p sdroxide-rade --bin rade-harness -- \
+cargo run -p sdro-rade --bin rade-harness -- \
     rx --input modem8k.wav --speech decoded16k.wav --stats rx.csv
 ```
 
@@ -486,7 +486,7 @@ holds both FT8/FT4/FT2 and manually entered QSOs:
   QSL/confirmation status column shows what's been uploaded and confirmed.
 - Records also hold DXCC entity, CQ/ITU zones, IOTA and POTA/SOTA references, and
   per-service QSL status — the data behind lookup, upload and award tracking.
-- The log is stored at `~/.config/sdroxide/qso_log.json` (native) or in browser
+- The log is stored at `~/.config/sdro/qso_log.json` (native) or in browser
   storage (remote).
 
 ## Spotting, awards & QSL upload
@@ -510,7 +510,7 @@ the **Spots** and **Uploads** tabs of the Settings dialog, and surfaced by the
   transmitter on the 3D globe. The schedule is downloaded from
   [EiBi](https://www.eibispace.de/) on first run and again at each season change,
   falling back to a built-in copy when offline. Users can define their own stations and corrections
-  in `~/.config/sdroxide/broadcast_stations.json`.
+  in `~/.config/sdro/broadcast_stations.json`.
 - **Callsign lookup** — auto-fill name, QTH, grid and state from **QRZ.com** or
   **HamQTH** on a spot click, at QSO start, or when you type a call (or press
   **LOOKUP** in the entry form).
@@ -528,16 +528,16 @@ the **Spots** and **Uploads** tabs of the Settings dialog, and surfaced by the
   from [region-flags](https://github.com/fonttools/region-flags)) — nothing is
   fetched at runtime to draw them.
 
-Credentials are stored in plaintext under `~/.config/sdroxide/net.json` (as with
+Credentials are stored in plaintext under `~/.config/sdro/net.json` (as with
 other ham software). See the [User Manual](docs/USER_MANUAL.md) for setup steps.
 
 ## Radio backends
 
-sdroxide can drive seventeen kinds of radio, selected on the **Radio** tab of the
+sdro can drive seventeen kinds of radio, selected on the **Radio** tab of the
 Settings window. Backend, serial, and radio-audio changes apply live when you
 press **Apply / reconnect**. A radio that isn't there yet at startup — or that
 drops mid-session — is retried in the background and attaches by itself, so
-starting sdroxide before the rig is fine:
+starting sdro before the rig is fine:
 
 - **RTL-SDR (USB)** — an RTL2832U dongle, driven directly over USB by a native
   pure-Rust driver. **No SoapySDR and no libusb needed**, so it works in every
@@ -559,7 +559,7 @@ starting sdroxide before the rig is fine:
   with the RSP's own controls — antenna input, LNA state, IF gain reduction,
   AGC and set point, notches, reference out. Start the server with **`-E`**: it
   greets exactly like a dongle, and the extended block it sends only in that
-  mode is what lets sdroxide name the radio and, more importantly, know when it
+  mode is what lets sdro name the radio and, more importantly, know when it
   is streaming **16-bit** samples. Without `-E` a `-b 16` server reads as noise,
   because the protocol carries nothing that would say otherwise.
 
@@ -594,7 +594,7 @@ starting sdroxide before the rig is fine:
   Covers 0–32 MHz by sampling HF directly at up to 129.6 Msps.
 
   The FX3 on this board has no boot EEPROM, so the receiver appears as a bare
-  Cypress bootloader on every plug-in with no radio function at all. sdroxide
+  Cypress bootloader on every plug-in with no radio function at all. sdro
   uploads the (MIT-licensed, bundled) firmware itself, so there is nothing to
   install and nothing to run first — plug it in and pick it in Settings. See
   "RX-888 permissions" under Building for the Linux udev rule.
@@ -606,7 +606,7 @@ starting sdroxide before the rig is fine:
   Above the ADC's Nyquist limit the receiver switches automatically to its
   R828D tuner and the VHF SMA, reaching to 1.75 GHz, so both antennas want to
   be connected. The bundled firmware carries no tuner driver — it was removed
-  upstream over a licence conflict — so sdroxide drives the tuner itself over
+  upstream over a licence conflict — so sdro drives the tuner itself over
   the firmware's I2C passthrough, including the synthesiser output that clocks
   it. VHF needs an ADC clock of 32.4 Msps or more for the tuner's 8 MHz IF to
   fit under Nyquist. Receive only.
@@ -646,7 +646,7 @@ starting sdroxide before the rig is fine:
   its own driver. The two are not variants of each other.
 
   The rate you pick is the rate you get, but the receiver runs at twice it: its
-  ADC is real, not complex, and sdroxide does the downconversion on the host —
+  ADC is real, not complex, and sdro does the downconversion on the host —
   a quarter-rate translate and a half-band decimator, which is also why the
   receiver's own DC offset lands at the *edge* of the span rather than its
   centre. An R2 and a Mini cannot be told apart on the USB bus, so the rate list
@@ -684,7 +684,7 @@ starting sdroxide before the rig is fine:
   menu, and fall back to a listed rate with a note if a particular firmware
   turns out not to carry them. And **two USB ids**: production boards are
   `38af:0001`, while prototypes came up on `1d50:60a1`, which is the Airspy R2
-  and Mini's own. sdroxide separates the two by the USB descriptors before
+  and Mini's own. sdro separates the two by the USB descriptors before
   opening and by the firmware version string after, so picking the wrong
   interface for either radio is answered with the name of the right one.
 
@@ -707,7 +707,7 @@ starting sdroxide before the rig is fine:
   **VGA** in 2 dB steps, a **TX VGA** in 1 dB steps, and the 14 dB RF amplifier
   — which is one switch shared between the two directions, offered here as
   separate receive and transmit settings so you can run the preamp bypassed on
-  receive and in circuit on transmit. sdroxide reprograms the whole front end on
+  receive and in circuit on transmit. sdro reprograms the whole front end on
   every change of direction, which is why that works here and does not through
   SoapySDR. Bias tee, baseband filter and ppm correction are on the same tab.
 
@@ -726,10 +726,10 @@ starting sdroxide before the rig is fine:
   down to **250 ksps**, because it decimates in its FPGA rather than running
   the converter slowly. And it **chooses its own baseband filter** (three
   quarters of the sample rate) and ignores anything the host asks for, so that
-  control is greyed out. The last two sdroxide reads off the board rather than
+  control is greyed out. The last two sdro reads off the board rather than
   assuming.
 
-  sdroxide decodes the Pro's standard 8-bit stream; its half-precision and
+  sdro decodes the Pro's standard 8-bit stream; its half-precision and
   extended-precision gateware modes are not driven, and a Pro left in one of
   them by `hackrf_debug -P` will need unplugging.
 
@@ -744,9 +744,9 @@ starting sdroxide before the rig is fine:
   no open USB protocol, so this is the one backend that needs a vendor
   package: install the [SDRplay API](https://www.sdrplay.com/api/) (v3.x) and
   make sure its service is running (Linux: `sudo systemctl enable --now
-  sdrplay`). Nothing is linked at build time — sdroxide finds the library at
+  sdrplay`). Nothing is linked at build time — sdro finds the library at
   runtime, so every build variant has the backend and simply reports what to
-  install when it is missing (`sdroxide --probe` says which piece is absent).
+  install when it is missing (`sdro --probe` says which piece is absent).
 
   Receive only, 1 kHz–2 GHz, up to 10 Msps. The RSP gain model is exposed the
   way the hardware means it: an **IF gain reduction** slider, an **LNA state**
@@ -786,18 +786,18 @@ starting sdroxide before the rig is fine:
   untouched one enumerates, reports its serial and acknowledges the start of the
   stream — while the FPGA behind it comes up empty and no sample ever arrives.
   Install ELAD's own `elad-firmware` loader (their Linux download area) as
-  `/usr/local/bin/elad-firmware` and sdroxide runs it for you at every open,
+  `/usr/local/bin/elad-firmware` and sdro runs it for you at every open,
   choosing the image for the Sample rate you picked; the six rates *are* six
   images, which is why nothing in the vendor protocol selects between them. Take
   the "intel" build — the newer "ubuntu-32" one is 32-bit and on a 64-bit machine
   exits silently having done nothing.
-  Without the loader sdroxide says so on screen rather than sitting on "waiting
+  Without the loader sdro says so on screen rather than sitting on "waiting
   for spectrum" for ever.
 
   **On an FDM-DUO the sample rate cannot be commanded.** The radio boots its own
   FPGA, has no menu for the rate, and arrives in whatever mode it was left in
   (192 kHz on a fresh one); there the Sample rate setting says how the stream is
-  *read*, and sdroxide measures the real throughput a couple of seconds in and
+  *read*, and sdro measures the real throughput a couple of seconds in and
   tells you on screen if the two disagree. See "ELAD permissions" under Building
   for the Linux udev rule.
 
@@ -805,7 +805,7 @@ starting sdroxide before the rig is fine:
   [gr-elad](https://github.com/ELADIT/gr-elad), the FDM-DUO manual's CAT chapter
   and — for the FPGA load, which `gr-elad` does not do at all —
   [SoapyELAD](https://github.com/DisagioDigitale/SoapyELAD). **Copy diagnostic report** on the Radio tab dumps every command
-  exchanged with the device, and `cargo run -p sdroxide-elad --example probe`
+  exchanged with the device, and `cargo run -p sdro-elad --example probe`
   does the same from a terminal.
 
 - **LimeSDR + LimeRFE (LimeSuite)** — the LimeSDR family (LimeSDR-USB, Mini v1
@@ -872,8 +872,8 @@ starting sdroxide before the rig is fine:
 
   **Not verified against hardware.** No LimeSDR has been attached to this code.
   **Copy diagnostic report** on the Radio tab dumps the session's library calls,
-  and `cargo run -p sdroxide-lime --example probe` does the same from a terminal.
-  For the LimeRFE specifically, `cargo run -p sdroxide-limerfe --example rfe --
+  and `cargo run -p sdro-lime --example probe` does the same from a terminal.
+  For the LimeRFE specifically, `cargo run -p sdro-limerfe --example rfe --
   /dev/ttyUSB0` talks to the board on its own and prints what happened at each
   step.
 
@@ -882,7 +882,7 @@ starting sdroxide before the rig is fine:
   ([github.com/rigexpert/libfobos](https://github.com/rigexpert/libfobos)), but
   it is still **found at runtime rather than linked** — same as SDRplay and
   LimeSuite above, and for the same reason: this interface is in every build
-  variant, nobody needs the library installed to compile sdroxide, and a
+  variant, nobody needs the library installed to compile sdro, and a
   machine without it enumerates nothing and says what to install. Receive only.
 
   **Three inputs, and they are genuinely different radios.** The **RF port**
@@ -890,7 +890,7 @@ starting sdroxide before the rig is fine:
   rates up to 80 Msps, with the LNA (0–3) and VGA (0–31) gain stages on the
   Radio tab. **HF1** and **HF2** bypass the tuner for direct sampling, which
   means no local oscillator at all: the receiver hands back two independent
-  *real* ADC channels, and sdroxide turns the selected one into complex
+  *real* ADC channels, and sdro turns the selected one into complex
   baseband itself with the same wideband channelizer the RX-888 uses for the
   identical problem. Tuning on those two is therefore pure software — nothing
   is commanded at the radio — and the gain sliders do nothing, because the
@@ -947,13 +947,13 @@ starting sdroxide before the rig is fine:
 
 - **SoapySDR** — any [SoapySDR](https://github.com/pothosware/SoapySDR) device
   (wideband IQ) — LimeSDR, bladeRF, USRP and friends. See below. A HackRF or an
-  Airspy reaches sdroxide better through its own interface above, and the device
+  Airspy reaches sdro better through its own interface above, and the device
   list says so when it finds one.
 
 - **OpenHPSDR** — Hermes/Metis-family Ethernet SDRs on the LAN (Protocol 1 and
   2). Press **Discover** to scan for devices, or enter the IP manually; pick a
   DDC sample rate (48 kHz–1536 kHz). Not yet hardware-verified — testers can run
-  `RUST_LOG=sdroxide_hpsdr=debug sdroxide` for connection/RX diagnostics (see the
+  `RUST_LOG=sdro_hpsdr=debug sdro` for connection/RX diagnostics (see the
   user manual, §5.4).
 
 - **CAT / Audio** — a CAT-controlled rig (Icom/CI-V, Kenwood, Yaesu, Elecraft,
@@ -972,13 +972,13 @@ starting sdroxide before the rig is fine:
   Control, audio and the radio's own spectrum scope — 475 points, or 689 on an
   IC-7610 or IC-7760 — over one connection. There is no I/Q on
   any Icom; the audio stream carries either demodulated AF or the 12 kHz DRM IF,
-  and sdroxide can demodulate the latter itself over about ±12 kHz. Not yet
+  and sdro can demodulate the latter itself over about ±12 kHz. Not yet
   hardware-verified.
 
 - **SmartSDR / FlexRadio** — a FLEX-6000 or FLEX-8000 on the LAN. Press
   **Discover** to listen for radios (they announce themselves), or enter an
   address for one reached over a router or VPN. Receive is a **DAX IQ** stream,
-  so sdroxide does its own demodulation and the radio's slice follows the dial;
+  so sdro does its own demodulation and the radio's slice follows the dial;
   transmit is DAX audio the radio modulates. DAX IQ tops out at **192 kHz**,
   which is this backend's widest span.
 
@@ -1018,7 +1018,7 @@ follows the dial too, so an accessory board switches its filters, relays and
 transverters for the band on the air rather than for the intermediate frequency.
 
 Beside it, **RX range** and **TX range** state which frequencies the radio
-covers, in MHz (`144-146, 430-440`). Leave them empty and sdroxide uses what the
+covers, in MHz (`144-146, 430-440`). Leave them empty and sdro uses what the
 device says about itself. Fill them in when the device says nothing — publishing
 a tuning range is optional in SoapySDR and plenty of drivers skip it — or when
 what it says is the tuner chip's range rather than the radio's. A driver that
@@ -1032,7 +1032,7 @@ A **wire-level radio simulator** allows for the backend to be exercised end to e
 
 ## Built-in TCI server
 
-sdroxide is also a **TCI server**, so TCI-capable programs — WSJT-X's SunSDR
+sdro is also a **TCI server**, so TCI-capable programs — WSJT-X's SunSDR
 (TCI) rig type, JTDX, MSHV, skimmers — can use it as their radio: frequency and
 mode control, a wideband IQ stream, receive audio to decode, and transmit audio
 to put on the air. Several clients can connect at once.
@@ -1044,17 +1044,17 @@ transmitter has a single owner, and keying up locally always takes it back.
 Verified against WSJT-X (rig *TCI Client RX1*, PTT via CAT, TCI audio). See the
 user manual, §5.6.
 
-The same settings section has **TCI Client**. Turn that on and sdroxide dials
+The same settings section has **TCI Client**. Turn that on and sdro dials
 out to another TCI server — 590Ctrl, at `127.0.0.1:50001` unless you change
 it — and sends the VFO whenever you tune. Tune the radio from its own knob and
-sdroxide's dial follows. That path is control only: no audio,
+sdro's dial follows. That path is control only: no audio,
 no IQ, and it does not key the transmitter. If 590Ctrl is already listening on
-50001, leave sdroxide's own server off or move it to another port.
+50001, leave sdro's own server off or move it to another port.
 
 ## Built-in Hamlib rigctld server
 
 Most amateur software reaches a radio through **Hamlib**, over the network
-protocol its `rigctld` daemon speaks. sdroxide serves that protocol directly, so
+protocol its `rigctld` daemon speaks. sdro serves that protocol directly, so
 **WSJT-X, fldigi, JS8Call, N1MM, Log4OM, GPredict and CQRLOG** can drive it with
 no extra daemon, no serial cable and no virtual COM port pair — frequency, mode
 and passband, PTT, VFO A/B and split, RIT/XIT, power, volume, RF gain,
@@ -1085,14 +1085,14 @@ into your laptop works against a remote radio over `--connect` too.
 
 ## SoapySDR connectivity
 
-sdroxide talks to any [SoapySDR](https://github.com/pothosware/SoapySDR) device.
+sdro talks to any [SoapySDR](https://github.com/pothosware/SoapySDR) device.
 It has been developed against a **HackRF One** (half-duplex TX) and a
 **LimeSDR** (full-duplex TX).
 
 - Select a device with `--device`, using SoapySDR argument syntax, e.g.
   `--device driver=hackrf` or `--device driver=lime,serial=...`. With no
   argument it uses the configured device, else the first one found.
-- `sdroxide --probe` lists all detected devices and their probed capabilities
+- `sdro --probe` lists all detected devices and their probed capabilities
   (frequency and sample-rate ranges, gains, antennas, sensors, duplex) and
   exits.
 - Capabilities drive the UI: RX-only devices hide all TX controls, band buttons
@@ -1106,12 +1106,12 @@ It has been developed against a **HackRF One** (half-duplex TX) and a
 Every release carries, for Linux:
 
 - an **AppImage** — one file, no install: download
-  `sdroxide-<version>-linux-x86_64-compat.AppImage` (or the `aarch64` one for a
+  `sdro-<version>-linux-x86_64-compat.AppImage` (or the `aarch64` one for a
   Raspberry Pi or other ARM board), `chmod +x` it, and run it. Built against
   glibc 2.35, so it runs on old and new distributions alike, and it needs no
   SoapySDR: every native driver is compiled in. USB receivers still need the
   udev rule (see below); the rules travel inside the AppImage under
-  `usr/share/doc/sdroxide`.
+  `usr/share/doc/sdro`.
 - a **`.deb`**, which installs the udev rules and the menu entry for you, and
   declares its dependencies.
 - a **portable tarball**, for anything else.
@@ -1147,14 +1147,14 @@ git submodule update --init --recursive
 
 Both are built from source by `build.rs`, so a default build needs a C compiler
 and CMake — already in the package lists below. If you would rather not build
-rtl_433, `--no-default-features` leaves it out and SDRoxide falls back to its own
-ISM decoders; see [`crates/sdroxide-ism/PROVENANCE.md`](crates/sdroxide-ism/PROVENANCE.md)
+rtl_433, `--no-default-features` leaves it out and SDRO falls back to its own
+ISM decoders; see [`crates/sdro-ism/PROVENANCE.md`](crates/sdro-ism/PROVENANCE.md)
 for what it is and what licence it carries. Mercury (GPL-3.0-or-later, with a
 codec2 subset under LGPL-2.1) and Data2G (Artistic-2.0, with Apache-2.0 parts)
 are always built; Data2G needs a C++20 compiler and CMake 3.24 or newer, and
 Mercury is left out of Windows builds made with MSVC. See
-[`crates/sdroxide-mercury/PROVENANCE.md`](crates/sdroxide-mercury/PROVENANCE.md)
-and [`crates/sdroxide-data2g/PROVENANCE.md`](crates/sdroxide-data2g/PROVENANCE.md).
+[`crates/sdro-mercury/PROVENANCE.md`](crates/sdro-mercury/PROVENANCE.md)
+and [`crates/sdro-data2g/PROVENANCE.md`](crates/sdro-data2g/PROVENANCE.md).
 
 ### What depends on what
 
@@ -1168,13 +1168,13 @@ combination couples them, and it couples them at *compile* time:
 | Server, client served from a directory | `cargo build --release`, run with `--web-root` | yes, at run time |
 | Server, client baked into the binary | `cargo build --release --features embed-web` | **yes, before you compile** |
 
-`embed-web` embeds `crates/sdroxide-web/dist` with `rust-embed`, so that
+`embed-web` embeds `crates/sdro-web/dist` with `rust-embed`, so that
 directory has to exist *while cargo compiles the server*. It is `.gitignore`d
 and therefore absent from a fresh clone, so reaching for `--features embed-web`
 first thing fails with:
 
 ```
-#[derive(RustEmbed)] folder '.../crates/sdroxide-web/dist' does not exist
+#[derive(RustEmbed)] folder '.../crates/sdro-web/dist' does not exist
 ```
 
 Build the web client first (below) and it compiles. Nothing else in the
@@ -1214,21 +1214,21 @@ brew install pkg-config cmake autoconf automake libtool opus
   nothing needs it to compile. It is what decodes **xHE-AAC**, the codec most
   surviving DRM shortwave broadcasters now use, and the DRM window says so when
   it is missing. It cannot be built in — its licence carries restrictions the
-  GPL does not permit, which is why Debian ships it in `non-free` — so sdroxide
+  GPL does not permit, which is why Debian ships it in `non-free` — so sdro
   looks for it at startup and uses it if it is there. `libfdk-aac2` on
   Debian/Ubuntu, `libfdk-aac` on Arch, `brew install fdk-aac` on macOS, or
   `libfdk-aac-2.dll` beside the executable on Windows. See
   `vendor/fdk-aac/PROVENANCE.md`.
 - **libnrsc5** is optional and a *runtime* dependency as well. It is nrsc5's
   decoder library, which **HD Radio** is decoded with, and none of it is built
-  into sdroxide: HD Radio's HDC audio codec is proprietary, and the patched
-  faad2 that decodes it lives inside that library. sdroxide looks for it at
+  into sdro: HD Radio's HDC audio codec is proprietary, and the patched
+  faad2 that decodes it lives inside that library. sdro looks for it at
   startup; without it the **HD RADIO** mode is greyed out and says why. Few
   distributions package it (`nrsc5-git` on the AUR, `nrsc5` in nixpkgs), so it
   is usually built from [theori-io/nrsc5](https://github.com/theori-io/nrsc5)
   with its own CMake — `sudo make install` puts it in `/usr/local/lib`, where
-  sdroxide looks too. Beside the executable works on every platform, and
-  `SDROXIDE_NRSC5_LIB` names one anywhere else. It has been checked against
+  sdro looks too. Beside the executable works on every platform, and
+  `SDRO_NRSC5_LIB` names one anywhere else. It has been checked against
   nrsc5 3.2.0 and upstream's current master. A library built with
   `-DUSE_FAAD2=OFF` finds stations but cannot play them, and the HD Radio
   window says that as well.
@@ -1247,7 +1247,7 @@ easy to misattribute:
 
 - **RADE's Opus** — the patched, FARGAN-enabled one that `vendor/rade_c` fetches
   and builds with **autotools**. Every CMake file involved — the vendored ones
-  and the wrapper project `crates/sdroxide-rade/build.rs` generates — requires
+  and the wrapper project `crates/sdro-rade/build.rs` generates — requires
   3.16 and configures cleanly under CMake 4.
 - **The server's Opus** — audio compression for browser and native remote
   clients, via the `opus` → `audiopus_sys` crates. On Unix `audiopus_sys` probes
@@ -1288,7 +1288,7 @@ point at a libopus that `pkg-config` cannot see.
 
 ```sh
 cargo build --release
-./target/release/sdroxide --probe        # verify your device is seen
+./target/release/sdro --probe        # verify your device is seen
 ```
 
 ### Browser client
@@ -1299,10 +1299,10 @@ Install it with `cargo install --locked trunk`, or drop a prebuilt binary from
 its releases page on your `PATH`:
 
 ```sh
-cd crates/sdroxide-web && trunk build --release
+cd crates/sdro-web && trunk build --release
 ```
 
-Output lands in `crates/sdroxide-web/dist`. Trunk downloads `wasm-bindgen-cli`
+Output lands in `crates/sdro-web/dist`. Trunk downloads `wasm-bindgen-cli`
 and `wasm-opt` itself the first time, so that run needs network access too.
 
 While working on the UI, skip the embed step entirely and point the server at
@@ -1310,8 +1310,8 @@ the directory — a plain `trunk build` (debug) is much faster, and a browser
 reload picks up a rebuild:
 
 ```sh
-cd crates/sdroxide-web && trunk build && cd ../..
-./target/release/sdroxide --server --web-root crates/sdroxide-web/dist
+cd crates/sdro-web && trunk build && cd ../..
+./target/release/sdro --server --web-root crates/sdro-web/dist
 ```
 
 ### Server with the client baked in
@@ -1320,7 +1320,7 @@ Build in this order, then the binary is self-contained and `--server` needs no
 `--web-root`:
 
 ```sh
-(cd crates/sdroxide-web && trunk build --release)   # 1. produces dist/
+(cd crates/sdro-web && trunk build --release)   # 1. produces dist/
 cargo build --release --features embed-web          # 2. embeds dist/
 ```
 
@@ -1337,20 +1337,20 @@ needs access to it.
 **Linux.** Install the packaged udev rule and replug the dongle:
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-rtlsdr.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-rtlsdr.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
 The `.deb` installs this for you. If your distribution's `rtl-sdr` package is
 already installed, its rules cover the same ids and you need not do anything.
-The `dvb_usb_rtl28xxu` DVB driver does **not** need blacklisting — sdroxide
+The `dvb_usb_rtl28xxu` DVB driver does **not** need blacklisting — sdro
 detaches it automatically and the kernel rebinds it when the dongle is
 unplugged.
 
 **No desktop session?** Every packaged rule grants access two ways: an ACL for
 whoever is logged in at the seat (`TAG+="uaccess"`), and `GROUP="plugdev"` for
 everyone else. The first grants nothing where there is no seat — **WSL2**, a
-headless machine over ssh, a container, or sdroxide running as a systemd
+headless machine over ssh, a container, or sdro running as a systemd
 service — and there the second is what makes the device reachable:
 
 ```sh
@@ -1381,7 +1381,7 @@ stops working as a TV tuner.
 
 **macOS.** Nothing to do.
 
-If a dongle is present but sdroxide cannot open it, `--probe` says so in words
+If a dongle is present but sdro cannot open it, `--probe` says so in words
 rather than errnos.
 
 ### RX-888 permissions
@@ -1392,14 +1392,14 @@ knowing about.
 **Linux.** Install the packaged udev rule and replug the receiver:
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-rx888.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-rx888.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
 The `.deb` installs this for you. The rule covers **two** USB ids, and both are
 required: `04b4:00f3` is the bare Cypress FX3 bootloader, which is how the
 receiver appears on every plug-in, and `04b4:00f1` is the same device once
-sdroxide has uploaded firmware into it. A rule covering only the second looks
+sdro has uploaded firmware into it. A rule covering only the second looks
 right and never works, because the upload happens through the first.
 
 **Windows.** Bind the device to **WinUSB** with [Zadig](https://zadig.akeo.ie/),
@@ -1409,9 +1409,9 @@ once for each of the two ids above.
 
 **Getting the full sample rate.** The FX3 bootloader always enumerates at USB
 2.0, *even on a perfectly good USB 3 cable and port* — only the firmware
-sdroxide uploads re-enumerates at SuperSpeed. So a receiver reported as "USB
+sdro uploads re-enumerates at SuperSpeed. So a receiver reported as "USB
 2.0" before it is programmed is not a problem. If it is still USB 2.0
-afterwards, that is a real cable or port problem, and sdroxide clamps the sample
+afterwards, that is a real cable or port problem, and sdro clamps the sample
 rate and says so on screen rather than silently dropping samples. `--probe`
 reports the link speed.
 
@@ -1422,13 +1422,13 @@ Same situation as the RTL-SDR — direct USB access, no vendor package.
 **Linux.** Install the packaged udev rule and replug the receiver:
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-airspyhf.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-airspyhf.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
 The `.deb` installs this for you. If Airspy's own `52-airspyhf.rules` is already
 installed it covers the same id and there is nothing to do. The rule also covers
-`03eb:6124`, the SAM-BA bootloader — sdroxide cannot flash firmware and never
+`03eb:6124`, the SAM-BA bootloader — sdro cannot flash firmware and never
 enters it, but a receiver left there by an interrupted vendor update is
 otherwise invisible to a non-root user, and "the device disappeared" is a worse
 thing to debug than a stray rule line.
@@ -1440,7 +1440,7 @@ already works with SDR# or SDR++ there is nothing to do.
 **macOS.** Nothing to do.
 
 All three models — Dual, Discovery and Ranger — share the id `03eb:800c`, so a
-device list cannot say which one is plugged in. sdroxide asks the receiver once
+device list cannot say which one is plugged in. sdro asks the receiver once
 it is open, and `--probe` lists what is on the bus.
 
 ### Airspy R2 / Mini permissions
@@ -1450,7 +1450,7 @@ Same situation as the Airspy HF+ — direct USB access, no vendor package — bu
 Both may be installed together and neither covers the other.
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-airspy.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-airspy.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
@@ -1464,7 +1464,7 @@ install Airspy's own package, which does the same thing.
 
 Both models share the id `1d50:60a1` *and* the same USB product string, so a
 device list cannot say whether an R2 or a Mini is plugged in — the only thing
-that separates them is the set of sample rates they offer, which sdroxide reads
+that separates them is the set of sample rates they offer, which sdro reads
 once the receiver is open.
 
 ### HydraSDR RFOne permissions
@@ -1474,7 +1474,7 @@ Same situation again — direct USB access, no vendor package.
 **Linux.** Install the packaged udev rule and replug the receiver:
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-hydrasdr.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-hydrasdr.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
@@ -1483,7 +1483,7 @@ already installed it covers the same ids and there is nothing to do.
 
 The rule covers **both** ids an RFOne can appear on: `38af:0001` for production
 boards and `1d50:60a1` for the prototypes, which share the Airspy R2 and Mini's
-pair. The second line duplicates `60-sdroxide-airspy.rules`, deliberately — two
+pair. The second line duplicates `60-sdro-airspy.rules`, deliberately — two
 udev rules granting the same access to the same device is a no-op, and it means
 installing either file alone is enough.
 
@@ -1499,7 +1499,7 @@ Same situation again — direct USB access, no vendor package.
 **Linux.** Install the packaged udev rule and replug the radio:
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-hackrf.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-hackrf.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
@@ -1507,7 +1507,7 @@ The `.deb` installs this for you. If Great Scott Gadgets' own `53-hackrf.rules`
 is already installed it covers the same ids and there is nothing to do. The rule
 covers the HackRF One *and Pro* (`1d50:6089` — the two share an id), the
 Jawbreaker (`604b`) and the rad1o (`cc15`), plus `1fc9:000c` — the DFU
-bootloader. sdroxide cannot flash firmware and never enters DFU, but a radio
+bootloader. sdro cannot flash firmware and never enters DFU, but a radio
 left there by an interrupted `hackrf_spiflash` is otherwise invisible to a
 non-root user.
 
@@ -1525,7 +1525,7 @@ Same situation again — direct USB access, no vendor package.
 **Linux.** Install the packaged udev rule and replug the device:
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-elad.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-elad.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
@@ -1545,29 +1545,29 @@ the device until the driver is put back.
 
 The board *revision* is not in the USB descriptors — a rev-9 HackRF One and an
 older one both report `1d50:6089` — so the device list names the family and
-sdroxide asks the radio once it is open. The product id does separate a HackRF
+sdro asks the radio once it is open. The product id does separate a HackRF
 One from a Jawbreaker or a rad1o, which matters because the three do not tune
 the same range. It does **not** separate a HackRF One from a HackRF Pro: Great
 Scott Gadgets ship one device descriptor for both, and only the USB *product
-string* differs. sdroxide reads that string during enumeration so the settings
+string* differs. sdro reads that string during enumeration so the settings
 dialog can offer the Pro's extra low sample rates without opening anything, and
 confirms the board from its board-id register once the radio is open.
 
 ### LimeSDR and LimeRFE permissions
 
-Not quite the same situation as the rest, because sdroxide does not open the
+Not quite the same situation as the rest, because sdro does not open the
 LimeSDR itself — LimeSuite does, and it ships its own rules.
 
 **Linux, the LimeSDR.** Nothing from this project. Installing LimeSuite installs
 `64-limesuite.rules`, which covers the LimeSDR-USB (`1d50:6108`), the Mini
 (`0403:601f`) and the Cypress FX3 bootloader states. If `LimeUtil --find` sees
-your board, so will sdroxide.
+your board, so will sdro.
 
-**Linux, the LimeRFE.** This one sdroxide *does* open — its own micro-USB port
+**Linux, the LimeRFE.** This one sdro *does* open — its own micro-USB port
 is a serial device — so install the packaged rule and replug it:
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-limerfe.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-limerfe.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
@@ -1586,30 +1586,30 @@ LimeRFE appears as an ordinary COM port through FTDI's driver.
 
 **macOS.** `brew install limesuite`. Nothing else to do.
 
-**If sdroxide finds no board but `LimeUtil --find` does**, the likely cause is
+**If sdro finds no board but `LimeUtil --find` does**, the likely cause is
 that the library found at runtime is not the one you think: the interface logs
-its version at startup (`LimeSuite loaded, version …`). If sdroxide lists a board
+its version at startup (`LimeSuite loaded, version …`). If sdro lists a board
 you do not recognise, note that LimeSuite claims the bare Cypress FX3 id that an
-*unprogrammed RX-888* also presents — sdroxide filters those out by board name
+*unprogrammed RX-888* also presents — sdro filters those out by board name
 and `--probe` names what it skipped.
 
 ### T/R switch permissions
 
 Only two of the six kinds of switching hardware need anything here.
 
-**USB HID relay boards and CM108 sound-card GPIO.** sdroxide writes HID reports
+**USB HID relay boards and CM108 sound-card GPIO.** sdro writes HID reports
 to these, and no distribution grants that by default — a card that plainly works
 for audio still cannot switch anything until the rule is in:
 
 ```sh
-sudo cp packaging/linux/60-sdroxide-relay.rules /usr/lib/udev/rules.d/
+sudo cp packaging/linux/60-sdro-relay.rules /usr/lib/udev/rules.d/
 sudo udevadm control --reload
 ```
 
 The `.deb` installs it for you. As with the LimeRFE rule, it is worth knowing
 what it costs: the dcttech relay boards carry `16c0:05df`, a *V-USB hobby id*
 shared with other people's home-made keyboards and LED controllers, so the rule
-loosens permissions on any such device on the machine. sdroxide's own device list
+loosens permissions on any such device on the machine. sdro's own device list
 additionally filters on the product string (`USBRelay…`), so it does not offer
 you somebody's keyboard as an antenna relay — but udev cannot make that
 distinction.
@@ -1622,8 +1622,8 @@ To check what a machine can see, and to throw one contact with the transmitter
 cold:
 
 ```sh
-cargo run -p sdroxide-relay --example relay -- --list --all
-cargo run -p sdroxide-relay --example relay -- --serial /dev/ttyUSB0 --board lcus --set 1 on
+cargo run -p sdro-relay --example relay -- --list --all
+cargo run -p sdro-relay --example relay -- --serial /dev/ttyUSB0 --board lcus --set 1 on
 ```
 
 **Windows and macOS.** No driver and no permissions to set — but note that the
@@ -1633,41 +1633,41 @@ above is what to attach to a bug report.
 
 ### SDRplay RSP prerequisites
 
-SDR Oxide does not interface with the USB device itself. It talks to the [SDRplay API](https://www.sdrplay.com/api/)
+SDRO does not interface with the USB device itself. It talks to the [SDRplay API](https://www.sdrplay.com/api/)
 (v3.x) — a userland library plus a background service that owns the hardware,
 and whose installer sets up its own USB permissions. Install it, make sure the
 service is running (Linux: `sudo systemctl enable --now sdrplay`; the Windows
 and macOS installers start it themselves), and the RSP appears under Rescan in
-**Settings → Radio → SDRplay RSP (USB)**. If it doesn't, `sdroxide --probe`
+**Settings → Radio → SDRplay RSP (USB)**. If it doesn't, `sdro --probe`
 says which piece is missing — the library, the service, or the device.
 
 ## Running
 
 ```sh
 # Native desktop, tuned to 20 m, FT8:
-sdroxide --freq 14074000 --mode ft8
+sdro --freq 14074000 --mode ft8
 
 # Server: DSP + hardware here, UI in a browser at http://<host>:4950
 # (needs a web client: either an embed-web build, or --web-root as below)
-sdroxide --server
+sdro --server
 
 # Server serving a Trunk-built client from disk instead of an embedded one:
-sdroxide --server --web-root crates/sdroxide-web/dist
+sdro --server --web-root crates/sdro-web/dist
 
 # Desktop UI driven by a remote server (no web client involved):
-sdroxide --connect 192.168.1.10:4950
+sdro --connect 192.168.1.10:4950
 
 # ...just one of that server's radios, instead of all of them in tabs
 # (ids: curl http://192.168.1.10:4950/radios):
-sdroxide --connect 192.168.1.10:4950/ws/1
+sdro --connect 192.168.1.10:4950/ws/1
 ```
 
 **Raspberry Pi 4/5 (and 400/500).** Mesa's Vulkan driver for the Pi's V3D GPU
 (V3DV) makes the display flicker, even in other
-wgpu and Vulkan applications. sdroxide detects that adapter at startup and
+wgpu and Vulkan applications. sdro detects that adapter at startup and
 renders through OpenGL ES instead, which is steady. That costs roughly one core
 of the four (237% CPU against 140% on an RTL-SDR at 2.4 Msps), so if your
-desktop does not flicker under Vulkan, `WGPU_BACKEND=vulkan sdroxide` takes it
+desktop does not flicker under Vulkan, `WGPU_BACKEND=vulkan sdro` takes it
 back. `WGPU_BACKEND` is honoured on every machine, and pins the renderer either
 way.
 
@@ -1689,7 +1689,7 @@ way.
 | `--server` | Run as a server: HTTP web client + WebSocket streaming backend. |
 | `--connect <HOST[:PORT]>` | Connect as a native remote client to a running server. |
 | `--port <PORT>` | Server port (default: from config, `4950`). |
-| `--web-root <DIR>` | Directory with the Trunk-built web client, e.g. `crates/sdroxide-web/dist` (default: embedded assets with `--features embed-web`). |
+| `--web-root <DIR>` | Directory with the Trunk-built web client, e.g. `crates/sdro-web/dist` (default: embedded assets with `--features embed-web`). |
 | `--fft <N>` | Spectrum FFT size (default `4096`). |
 | `--tx-tune <SECS>` | Headless TX smoke test: key a tune carrier at minimal drive, then exit. |
 | `--ft8-cq <SECS>` | Headless FT8 smoke test: call CQ at minimal power, then exit. |
@@ -1764,10 +1764,10 @@ deploy rather than after. CW decoding uses the
 [DeepCW](https://github.com/e04/deepcw-engine) model, which is **AGPL-3.0-only**
 and is linked into the binary rather than read as a data file — so its terms
 cover the built program as a whole. The practical difference is AGPL section 13:
-**running `sdroxide --server` and letting other people use that instance over a
+**running `sdro --server` and letting other people use that instance over a
 network counts as conveying it to them, so they have to be offered the
-Corresponding Source.** Using sdroxide on your own machine changes nothing. The
-model is confined to the `sdroxide-deepcw` crate, and the wasm web client links
+Corresponding Source.** Using sdro on your own machine changes nothing. The
+model is confined to the `sdro-deepcw` crate, and the wasm web client links
 none of it.
 
 The grey-line shade, the IBP beacon schedule, the meteor-shower calendar and the

@@ -13,9 +13,9 @@
 use std::net::Ipv4Addr;
 use std::time::{Duration, Instant};
 
-use sdroxide_dsp::{Decimator, PureSignal};
-use sdroxide_hpsdr::{HpsdrBoard, HpsdrRx, LNA_GAIN_ELEMENT};
-use sdroxide_radio::{Complex32, ControlUpdate, IqSource, Result};
+use sdro_dsp::{Decimator, PureSignal};
+use sdro_hpsdr::{HpsdrBoard, HpsdrRx, LNA_GAIN_ELEMENT};
+use sdro_radio::{Complex32, ControlUpdate, IqSource, Result};
 
 use crate::device_registry::{DeviceKey, SharedDevice, registry};
 
@@ -54,7 +54,7 @@ pub struct HpsdrSource {
     /// never assumed to equal it or to be a constant (issue #440).
     tx_rate: f64,
     center: f64,
-    /// See [`sdroxide_types::HpsdrConfig::ppm`].
+    /// See [`sdro_types::HpsdrConfig::ppm`].
     ppm: f64,
     rx_scratch: Vec<f32>,
     tx_scratch: Vec<f32>,
@@ -63,7 +63,7 @@ pub struct HpsdrSource {
     /// wants an edge.
     ptt: bool,
     label: String,
-    /// See [`sdroxide_types::HpsdrConfig::tx_latency_ms`].
+    /// See [`sdro_types::HpsdrConfig::tx_latency_ms`].
     tx_latency_ms: f64,
 
     // ── PureSignal ──
@@ -91,7 +91,7 @@ pub struct HpsdrSource {
     /// Where the HL2IOBoard takes its receive signal from, when that is offered
     /// as the receive antenna — see [`HpsdrSource::io_inputs_offered`]. `None`
     /// on every other board and configuration.
-    io_rx_input: Option<sdroxide_types::HpsdrIoRxInput>,
+    io_rx_input: Option<sdro_types::HpsdrIoRxInput>,
 }
 
 impl HpsdrSource {
@@ -102,7 +102,7 @@ impl HpsdrSource {
     /// attach runs with the established ones whatever its own config says.
     pub fn open(
         ip: Ipv4Addr,
-        cfg: &sdroxide_types::HpsdrConfig,
+        cfg: &sdro_types::HpsdrConfig,
         center_hz: f64,
     ) -> anyhow::Result<Self> {
         let board = registry()
@@ -117,7 +117,7 @@ impl HpsdrSource {
                     cfg.io_rx_input,
                     {
                         let (lo, hi) = cfg.auto_gain_bounds();
-                        sdroxide_hpsdr::AutoGain::new(
+                        sdro_hpsdr::AutoGain::new(
                             cfg.auto_gain,
                             cfg.auto_gain_step_db,
                             cfg.auto_gain_attack_ms,
@@ -132,7 +132,7 @@ impl HpsdrSource {
             })
             .map_err(anyhow::Error::msg)?;
         let rx = board.rx(cfg.ddc).map_err(|e| anyhow::Error::msg(e.to_string()))?;
-        rx.set_rx_freq(sdroxide_types::HpsdrConfig::apply_ppm(center_hz, cfg.ppm));
+        rx.set_rx_freq(sdro_types::HpsdrConfig::apply_ppm(center_hz, cfg.ppm));
         let label = if cfg.ddc == 0 {
             format!("HPSDR {} @ {ip} ({:.3} Msps)", board.board(), board.sample_rate_hz() / 1e6)
         } else {
@@ -203,7 +203,7 @@ impl HpsdrSource {
             // is set wrong sends the operator after a board they do not own
             // (issue #518).
             if board.has_io_board()
-                && cfg.io_rx_input != sdroxide_types::HpsdrIoRxInput::IoBoardPureSignal
+                && cfg.io_rx_input != sdro_types::HpsdrIoRxInput::IoBoardPureSignal
             {
                 tracing::warn!(
                     "HPSDR: PureSignal is on but the IO board's receive input is set to \"{}\" \
@@ -221,7 +221,7 @@ impl HpsdrSource {
         let io_rx_input = (board.protocol() == 1
             && board.has_io_board()
             && cfg.ddc == 0
-            && cfg.io_rx_input != sdroxide_types::HpsdrIoRxInput::Radio)
+            && cfg.io_rx_input != sdro_types::HpsdrIoRxInput::Radio)
             .then_some(cfg.io_rx_input);
         Ok(HpsdrSource {
             rate,
@@ -241,8 +241,8 @@ impl HpsdrSource {
             // hand, or by the one build whose ceiling was 1000 ms, still opens
             // on something the ring can hold.
             tx_latency_ms: cfg.tx_latency_ms.clamp(
-                *sdroxide_types::HpsdrConfig::TX_LATENCY_MS_RANGE.start(),
-                *sdroxide_types::HpsdrConfig::TX_LATENCY_MS_RANGE.end(),
+                *sdro_types::HpsdrConfig::TX_LATENCY_MS_RANGE.start(),
+                *sdro_types::HpsdrConfig::TX_LATENCY_MS_RANGE.end(),
             ),
             puresignal: puresignal.map(|mut ps| {
                 ps.set_frozen(cfg.ps_frozen);
@@ -383,7 +383,7 @@ impl IqSource for HpsdrSource {
     fn set_center_hz(&mut self, hz: f64) -> Result<()> {
         self.center = hz;
         if let Some(rx) = self.rx.as_ref() {
-            rx.set_rx_freq(sdroxide_types::HpsdrConfig::apply_ppm(hz, self.ppm));
+            rx.set_rx_freq(sdro_types::HpsdrConfig::apply_ppm(hz, self.ppm));
         }
         Ok(())
     }
@@ -440,7 +440,7 @@ impl IqSource for HpsdrSource {
     fn set_antenna(&mut self, name: &str) -> Result<()> {
         let Some(current) = self.io_rx_input.as_mut() else { return Ok(()) };
         let Some(input) =
-            sdroxide_types::HpsdrIoRxInput::ALL.into_iter().find(|i| i.label() == name)
+            sdro_types::HpsdrIoRxInput::ALL.into_iter().find(|i| i.label() == name)
         else {
             return Ok(());
         };
@@ -464,9 +464,9 @@ impl IqSource for HpsdrSource {
         self.rx.as_ref()?.pa_temp_c()
     }
 
-    fn tx_telemetry(&mut self) -> Option<sdroxide_types::TxTelemetry> {
+    fn tx_telemetry(&mut self) -> Option<sdro_types::TxTelemetry> {
         let swr = self.rx.as_ref()?.swr()?;
-        Some(sdroxide_types::TxTelemetry { fwd_w: None, swr: Some(swr), alc: None, po: None, rfl_w: None })
+        Some(sdro_types::TxTelemetry { fwd_w: None, swr: Some(swr), alc: None, po: None, rfl_w: None })
     }
 
     /// The board's own ADC-overflow flag — see [`IqSource::adc_overload`]. It
@@ -480,9 +480,9 @@ impl IqSource for HpsdrSource {
     /// What the predistortion loop is doing, for the operator rather than for
     /// the log (issue #441). Only the radio that owns the transmitter runs one,
     /// so every other DDC's tab answers `None` and shows nothing.
-    fn puresignal(&mut self) -> Option<sdroxide_types::PsMeter> {
+    fn puresignal(&mut self) -> Option<sdro_types::PsMeter> {
         let ps = self.puresignal.as_ref()?;
-        Some(sdroxide_types::PsMeter {
+        Some(sdro_types::PsMeter {
             locked: ps.locked(),
             correction_db: ps.correction_db(),
             score: ps.score(),
@@ -498,10 +498,10 @@ impl IqSource for HpsdrSource {
             if let Some(rx) = self.rx.as_mut() {
                 rx.set_lna_gain_db(db);
             }
-        } else if name == sdroxide_types::HpsdrConfig::PPM_ELEMENT {
+        } else if name == sdro_types::HpsdrConfig::PPM_ELEMENT {
             self.ppm = db;
             if let Some(rx) = self.rx.as_ref() {
-                rx.set_rx_freq(sdroxide_types::HpsdrConfig::apply_ppm(self.center, self.ppm));
+                rx.set_rx_freq(sdro_types::HpsdrConfig::apply_ppm(self.center, self.ppm));
             }
         }
         Ok(())
@@ -537,7 +537,7 @@ impl IqSource for HpsdrSource {
     /// `HpsdrBoard::open` and never revisited — so a live connection outliving
     /// its last radio made an Apply that changed any of them do nothing at
     /// all. That is the half of issue #135 the reporter saw on a Hermes-Lite 2:
-    /// a new sample rate only took effect after restarting sdroxide.
+    /// a new sample rate only took effect after restarting sdro.
     ///
     /// Dropping the last `Arc` runs the connection's teardown before this
     /// returns, so the replacement opens against a board that has already been
@@ -570,7 +570,7 @@ impl IqSource for HpsdrSource {
     /// the right band before the operator keys.
     fn set_tx_freq_hz(&mut self, hz: f64) {
         if let Some(rx) = self.rx.as_ref() {
-            rx.set_tx_freq(sdroxide_types::HpsdrConfig::apply_ppm(hz, self.ppm));
+            rx.set_tx_freq(sdro_types::HpsdrConfig::apply_ppm(hz, self.ppm));
         }
     }
 
@@ -590,7 +590,7 @@ impl IqSource for HpsdrSource {
         }
         match self.rx.as_ref() {
             Some(rx) => {
-                Ok(rx.tx_begin(sdroxide_types::HpsdrConfig::apply_ppm(center_hz, self.ppm)))
+                Ok(rx.tx_begin(sdro_types::HpsdrConfig::apply_ppm(center_hz, self.ppm)))
             }
             None => Ok(self.tx_rate),
         }
@@ -653,7 +653,7 @@ impl IqSource for HpsdrSource {
         }
     }
 
-    /// See [`sdroxide_types::HpsdrConfig::tx_latency_ms`]: this board holds no
+    /// See [`sdro_types::HpsdrConfig::tx_latency_ms`]: this board holds no
     /// transmit buffer of its own to widen, so raising this only widens the
     /// cushion the engine leaves before the board's TX ring on this side of
     /// the network.

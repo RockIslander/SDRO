@@ -1,0 +1,9 @@
+[package]
+name = "sdro-rotator"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sdro-types.workspace = true
+crossbeam-channel.workspace = true
+tracing.workspace = true

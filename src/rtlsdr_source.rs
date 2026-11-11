@@ -1,5 +1,5 @@
 //! An [`IqSource`] for an RTL2832U dongle driven by the native driver in
-//! `sdroxide-rtlsdr` — no SoapySDR, no libusb.
+//! `sdro-rtlsdr` — no SoapySDR, no libusb.
 //!
 //! Two ways in, one source: [`RtlSdrSource::open`] takes a dongle on this
 //! machine's USB bus, [`RtlSdrSource::connect`] one published over the network
@@ -12,11 +12,11 @@
 
 use std::time::Duration;
 
-use sdroxide_dsp::IqCorrect;
-use sdroxide_radio::{Complex32, DC_BLOCK_HZ, IqSource, Result};
-use sdroxide_rtlsdr::RtlSdrHandle;
-use sdroxide_rtlsdr::tcp::proto::RspCmd;
-use sdroxide_types::{RtlSdrAgc, RtlSdrConfig, RtlSdrHfMode, RtlTcpConfig};
+use sdro_dsp::IqCorrect;
+use sdro_radio::{Complex32, DC_BLOCK_HZ, IqSource, Result};
+use sdro_rtlsdr::RtlSdrHandle;
+use sdro_rtlsdr::tcp::proto::RspCmd;
+use sdro_types::{RtlSdrAgc, RtlSdrConfig, RtlSdrHfMode, RtlTcpConfig};
 
 /// How long the dongle may deliver nothing before the connection counts as
 /// dead. Shorter than the HPSDR backend's five seconds: this is a local USB
@@ -173,10 +173,10 @@ impl IqSource for RtlSdrSource {
     fn read(&mut self, buf: &mut [Complex32]) -> Result<usize> {
         // Straight into the caller's block: the ring's interleaved floats and a
         // complex buffer are the same bytes, so there is nothing to unpack —
-        // see `sdroxide_dsp::as_interleaved_mut`. The scratch vector and the
+        // see `sdro_dsp::as_interleaved_mut`. The scratch vector and the
         // loop that copied out of it were a second pass over the whole stream
         // to change nothing but the type.
-        let n = self.handle.rx_read(sdroxide_dsp::as_interleaved_mut(buf));
+        let n = self.handle.rx_read(sdro_dsp::as_interleaved_mut(buf));
         let pairs = n / 2;
         if pairs == 0 {
             // Nothing yet — brief nap so the DSP loop doesn't spin hot.

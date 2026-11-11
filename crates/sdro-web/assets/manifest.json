@@ -1,0 +1,15 @@
+{
+  "name": "SDRO",
+  "short_name": "sdro",
+  "description": "PowerSDR/Thetis-style SDR transceiver, served to the browser",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    { "src": "sdro-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "sdro-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,11 @@
+[package]
+name = "sdro-audio"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+cpal = "0.18.2"
+rtrb.workspace = true
+sdro-types.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

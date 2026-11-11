@@ -4,7 +4,7 @@
 //! including the Settings dialog — running, so the user can pick a working
 //! interface and restart instead of the program failing to launch.
 
-use sdroxide_radio::{Complex32, IqSource, Result};
+use sdro_radio::{Complex32, IqSource, Result};
 
 pub struct NullSource {
     center: f64,
@@ -52,7 +52,7 @@ impl NullSource {
             center: center_hz,
             // Where the switch is: the rings on the radio's tab while there are
             // tabs, and above the A/B selector only in a one-radio session,
-            // which has none (`SdroxideApp::own_link_state`).
+            // which has none (`SdroApp::own_link_state`).
             status: "This radio is switched off — its interface is not open. Switch it back on \
                      with the rings on its tab, or in Settings → Radio. A session with one \
                      radio has them above the A/B selector (in the VFO menu on a compact \

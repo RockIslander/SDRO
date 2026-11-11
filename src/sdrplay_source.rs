@@ -1,12 +1,12 @@
 //! An [`IqSource`] for an SDRplay RSP driven through the vendor's API service
-//! by the native driver in `sdroxide-sdrplay` — no SoapySDR in the path.
+//! by the native driver in `sdro-sdrplay` — no SoapySDR in the path.
 //!
 //! Receive only: the trait's transmit methods already default to errors, which
 //! is the correct answer for this hardware.
 //!
 //! On an RSPduo with both tuners running, this is also where the two aerials
 //! meet: the driver hands back a sample-aligned pair and the adaptive filter
-//! in `sdroxide_dsp` turns it into one stream — a noise source nulled, or two
+//! in `sdro_dsp` turns it into one stream — a noise source nulled, or two
 //! fading paths combined (issue #153).
 //!
 //! Or they do not meet at all. The same two tuners can instead be two radios
@@ -17,10 +17,10 @@
 
 use std::time::{Duration, Instant};
 
-use sdroxide_dsp::Diversity;
-use sdroxide_radio::{Complex32, IqSource, Result, lo_offset_for};
-use sdroxide_sdrplay::{DuoMode, SdrPlayDevice, SdrPlayHandle};
-use sdroxide_types::{
+use sdro_dsp::Diversity;
+use sdro_radio::{Complex32, IqSource, Result, lo_offset_for};
+use sdro_sdrplay::{DuoMode, SdrPlayDevice, SdrPlayHandle};
+use sdro_types::{
     Direction, DiversityMode, GainElement, SdrPlayAgc, SdrPlayConfig, SdrPlayDuo, SdrPlayDuoTuner,
     SdrPlayHdrBw, SdrPlayModel,
 };
@@ -85,11 +85,11 @@ impl SdrPlaySource {
         // holding, which the service reports as no such device (issue #392).
         // A board that resolves to nothing keys on what was configured and
         // lets the open below report why.
-        let key = sdroxide_sdrplay::resolve_serial(&cfg.serial)
+        let key = sdro_sdrplay::resolve_serial(&cfg.serial)
             .unwrap_or_else(|| cfg.serial.trim().to_string());
         let dev = registry()
             .get_or_open(DeviceKey::SdrPlay(key), || {
-                sdroxide_sdrplay::open(cfg, center_hz).map_err(|e| e.to_string())
+                sdro_sdrplay::open(cfg, center_hz).map_err(|e| e.to_string())
             })
             .map_err(anyhow::Error::msg)?;
         // Which tuner this radio listens on — except on a session running
@@ -109,7 +109,7 @@ impl SdrPlaySource {
         let dual = handle.dual_tuner();
         let label = handle.label();
         // Zero-IF part: park the LO off the VFO where the analog filter
-        // allows it — see `sdroxide_radio::lo_offset_for`. A low IF has no DC
+        // allows it — see `sdro_radio::lo_offset_for`. A low IF has no DC
         // spike in the middle of the span to dodge, so it wants none: the
         // offset would only push the wanted signal towards the skirt of an
         // analog filter that is already the narrowest part of this mode.
@@ -287,10 +287,10 @@ impl SdrPlaySource {
 }
 
 /// The configuration's mode, as the DSP crate spells it.
-fn div_mode(mode: DiversityMode) -> sdroxide_dsp::DiversityMode {
+fn div_mode(mode: DiversityMode) -> sdro_dsp::DiversityMode {
     match mode {
-        DiversityMode::Cancel => sdroxide_dsp::DiversityMode::Cancel,
-        DiversityMode::Combine => sdroxide_dsp::DiversityMode::Combine,
+        DiversityMode::Cancel => sdro_dsp::DiversityMode::Cancel,
+        DiversityMode::Combine => sdro_dsp::DiversityMode::Combine,
     }
 }
 
@@ -505,7 +505,7 @@ impl IqSource for SdrPlaySource {
             }
             SdrPlayConfig::DIV_TAPS_ELEMENT => {
                 let taps =
-                    db.round().clamp(1.0, f64::from(sdroxide_types::DIVERSITY_MAX_TAPS)) as u8;
+                    db.round().clamp(1.0, f64::from(sdro_types::DIVERSITY_MAX_TAPS)) as u8;
                 self.div_cfg.taps = taps;
                 if let Some(d) = self.diversity.as_mut() {
                     d.set_taps(usize::from(taps));
@@ -601,7 +601,7 @@ impl IqSource for SdrPlaySource {
         // this note is the only thing standing between the operator and a
         // deaf receiver with no explanation.
         if let Some(w) =
-            sdroxide_types::SdrPlayDevice::degraded_warning(self.handle.serial(), self.model())
+            sdro_types::SdrPlayDevice::degraded_warning(self.handle.serial(), self.model())
         {
             notes.push(w);
         }

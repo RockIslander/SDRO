@@ -1,0 +1,17 @@
+[package]
+name = "sdro-skimmer"
+version.workspace = true
+edition.workspace = true
+
+# Native-only: wideband multi-signal decoders (CW today). Not linked by the
+# wasm client — skimming runs server-side in the engine, like FT8/FT4.
+
+[dependencies]
+sdro-types.workspace = true
+sdro-dsp.workspace = true
+# AGPL-3.0-only, and it reaches through — see crates/sdro-deepcw/Cargo.toml.
+sdro-deepcw.workspace = true
+num-complex.workspace = true
+rustfft.workspace = true
+crossbeam-channel.workspace = true
+tracing.workspace = true

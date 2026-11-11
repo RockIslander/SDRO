@@ -138,12 +138,12 @@ jobs:
             | tar -xzf - -C "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Build web client
-        working-directory: elsewhere/rebuild/crates/sdroxide-web
+        working-directory: elsewhere/rebuild/crates/sdro-web
         run: trunk build --release
       - uses: actions/upload-artifact@v7
         with:
           name: web
-          path: elsewhere/rebuild/crates/sdroxide-web/dist
+          path: elsewhere/rebuild/crates/sdro-web/dist
           if-no-files-found: error
           retention-days: 14
 
@@ -217,7 +217,7 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: web
-          path: ${{ env.DIR }}/crates/sdroxide-web/dist
+          path: ${{ env.DIR }}/crates/sdro-web/dist
       - name: Rebuild
         run: packaging/rebuild-release.sh --no-web
       - name: Compare with the release

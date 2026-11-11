@@ -1,6 +1,6 @@
 # rax25 — provenance
 
-`crates/sdroxide-ax25` carries code from **rax25**, an AX.25 connected-mode
+`crates/sdro-ax25` carries code from **rax25**, an AX.25 connected-mode
 implementation in Rust by Thomas Habets.
 
 | | |
@@ -12,7 +12,7 @@ implementation in Rust by Thomas Habets.
 
 **The upstream repository ships no `LICENSE` file.** MIT is declared in its
 `Cargo.toml` (`license = "MIT"`) and in the crates.io metadata, and nowhere
-else. `crates/sdroxide-ax25/LICENSE` carries the standard MIT text with Thomas
+else. `crates/sdro-ax25/LICENSE` carries the standard MIT text with Thomas
 Habets named as the copyright holder, which is the licence he granted; it is
 reproduced by us rather than copied from him, and this note exists so nobody
 later mistakes it for an upstream file.
@@ -64,7 +64,7 @@ loud now.
 
 The codec is exercised against frames that came off Direwolf's own
 transmission, not merely against frames built here — see
-`crates/sdroxide-digi/tests/packet_interop.rs`. The state machine is covered by
+`crates/sdro-digi/tests/packet_interop.rs`. The state machine is covered by
 upstream's own tests, carried across and passing.
 
 ## What was *not* taken, and why
@@ -144,7 +144,7 @@ upstream later will want to know they were deliberate.
    receiver therefore never acknowledges on its own: it answers a poll, and
    otherwise waits. Against a real TNC this works, because a TNC polls on the
    last frame of its window and our `check_need_for_response` answers a P=1
-   immediately — but between two sdroxide stations a sender that fills its
+   immediately — but between two sdro stations a sender that fills its
    window stalls until *its* T1 expires, which is seconds. Left as it is: it
    costs throughput on long transfers and nothing else, and a third timer inside
    the vendored machine is a change that cannot be tested here against the gear

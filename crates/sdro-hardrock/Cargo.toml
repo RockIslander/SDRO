@@ -1,0 +1,17 @@
+[package]
+name = "sdro-hardrock"
+version.workspace = true
+edition.workspace = true
+
+# HobbyPCB Hardrock amplifiers (HR500, HR50) over their USB or ACC serial port:
+# readings, band, keying mode, antenna and the ATU.
+#
+# A station accessory like `sdro-relay` and `sdro-rotator`, and pure
+# Rust for the same reason: it has to work in every build variant on every
+# target. Native-only (links `serialport`); the settings vocabulary lives in
+# `sdro-types`, which is wasm-safe.
+[dependencies]
+serialport = { version = "4.10", default-features = false }
+sdro-types.workspace = true
+crossbeam-channel.workspace = true
+tracing.workspace = true

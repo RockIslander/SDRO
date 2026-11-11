@@ -1,0 +1,10 @@
+[package]
+name = "sdro-kiss"
+version.workspace = true
+edition.workspace = true
+description = "KISS TNC server: sdro's modem, over a socket"
+
+[dependencies]
+sdro-ax25.workspace = true
+crossbeam-channel.workspace = true
+tracing.workspace = true

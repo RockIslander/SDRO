@@ -29,10 +29,10 @@
 
 use std::time::Duration;
 
-use sdroxide_dsp::IqCorrect;
-use sdroxide_radio::{Complex32, ControlUpdate, DC_BLOCK_HZ, IqSource, Result};
-use sdroxide_spyserver::SpyServerHandle;
-use sdroxide_types::SpyServerConfig;
+use sdro_dsp::IqCorrect;
+use sdro_radio::{Complex32, ControlUpdate, DC_BLOCK_HZ, IqSource, Result};
+use sdro_spyserver::SpyServerHandle;
+use sdro_types::SpyServerConfig;
 
 /// How long the server may deliver nothing before the link counts as dead.
 /// Matches the `rtl_tcp` backend's network window: long enough that a
@@ -107,7 +107,7 @@ impl SpyServerSource {
 
     /// What the server said about the receiver behind it, for the capability
     /// block.
-    pub fn info(&self) -> &sdroxide_spyserver::DeviceInfo {
+    pub fn info(&self) -> &sdro_spyserver::DeviceInfo {
         &self.handle.info
     }
 
@@ -167,7 +167,7 @@ impl IqSource for SpyServerSource {
         let reachable = self.handle.reachable_center(hz);
         if (reachable - hz).abs() > 1.0 {
             let (lo, hi) = self.handle.tuning_window();
-            return Err(sdroxide_radio::RadioError::Msg(if self.handle.can_control() {
+            return Err(sdro_radio::RadioError::Msg(if self.handle.can_control() {
                 format!(
                     "this receiver tunes {:.3}–{:.3} MHz",
                     f64::from(self.handle.info.minimum_frequency) / 1e6,
@@ -397,7 +397,7 @@ mod tests {
     use std::net::TcpListener;
 
     /// Just enough of a server to get a source open and hand it one FFT frame.
-    /// The protocol itself is exercised properly in `sdroxide-spyserver`'s own
+    /// The protocol itself is exercised properly in `sdro-spyserver`'s own
     /// tests; what is under test here is the thin layer above it, where the
     /// two lanes are separated and a refusal is decided.
     fn fake(can_control: u32) -> String {

@@ -1,6 +1,6 @@
 # Reproducible builds
 
-Some sdroxide release binaries are *reproducible*: anyone who builds the
+Some sdro release binaries are *reproducible*: anyone who builds the
 release's tagged source again, in the same pinned environment, gets exactly the
 same bytes. If your rebuild matches, the binary you downloaded was built from
 that source and nothing else. You do not have to trust the machine that built
@@ -13,12 +13,12 @@ client that every binary embeds:
 
 | Platform | Binary inside |
 |---|---|
-| `linux-x86_64-compat` | `sdroxide-<tag>-linux-x86_64-compat.tar.gz` → `sdroxide/sdroxide` |
-| `linux-aarch64-compat` | `sdroxide-<tag>-linux-aarch64-compat.tar.gz` → `sdroxide/sdroxide` |
-| `macos-aarch64` | `sdroxide-<tag>-macos-aarch64.tar.gz` → `sdroxide/sdroxide` |
-| `macos-x86_64` | `sdroxide-<tag>-macos-x86_64.tar.gz` → `sdroxide/sdroxide` |
-| `windows-x86_64` | `sdroxide-<tag>-windows-x86_64.zip` → `sdroxide/sdroxide.exe` |
-| `web` | `sdroxide-web-<tag>.zip` (every file) |
+| `linux-x86_64-compat` | `sdro-<tag>-linux-x86_64-compat.tar.gz` → `sdro/sdro` |
+| `linux-aarch64-compat` | `sdro-<tag>-linux-aarch64-compat.tar.gz` → `sdro/sdro` |
+| `macos-aarch64` | `sdro-<tag>-macos-aarch64.tar.gz` → `sdro/sdro` |
+| `macos-x86_64` | `sdro-<tag>-macos-x86_64.tar.gz` → `sdro/sdro` |
+| `windows-x86_64` | `sdro-<tag>-windows-x86_64.zip` → `sdro/sdro.exe` |
+| `web` | `sdro-web-<tag>.zip` (every file) |
 
 These are the builds whose environment is pinned. All of them use the Rust
 toolchain set by `RUST_TOOLCHAIN` in `.github/workflows/release.yml`. On top of
@@ -54,8 +54,8 @@ prints the SHA-256 of each binary. To compare with a binary you built, name the
 platform and your file:
 
 ```sh
-packaging/verify-release.sh v1.8.0 linux-x86_64-compat=target/rebuild/sdroxide
-packaging/verify-release.sh v1.8.0 web=crates/sdroxide-web/dist
+packaging/verify-release.sh v1.8.0 linux-x86_64-compat=target/rebuild/sdro
+packaging/verify-release.sh v1.8.0 web=crates/sdro-web/dist
 ```
 
 Each line says `MATCH` or `DIFFER`, and the script exits with status 1 if
@@ -147,7 +147,7 @@ Install the Xcode that `MACOS_XCODE` names in the tag's `release.yml`, then:
 
 ```sh
 git clone --recurse-submodules --branch v1.8.0 https://github.com/dividebysandwich/sdroxide
-cd sdroxide
+cd sdro
 export DEVELOPER_DIR=/Applications/Xcode_26.3.app/Contents/Developer   # instead of xcode-select
 brew install cmake autoconf automake libtool
 rustup toolchain install 1.98.1 --target wasm32-unknown-unknown       # RUST_TOOLCHAIN
@@ -155,7 +155,7 @@ export RUSTUP_TOOLCHAIN=1.98.1
 # trunk, the version release.yml downloads (0.21.14):
 #   https://github.com/trunk-rs/trunk/releases
 packaging/rebuild-release.sh
-packaging/verify-release.sh v1.8.0 macos-aarch64=target/rebuild/sdroxide web=crates/sdroxide-web/dist
+packaging/verify-release.sh v1.8.0 macos-aarch64=target/rebuild/sdro web=crates/sdro-web/dist
 ```
 
 `rebuild-release.sh` refuses to run with the wrong `rustc`, and warns when the
@@ -174,8 +174,8 @@ scripts from its MINGW64 shell.
 Run [diffoscope](https://diffoscope.org) on the two binaries:
 
 ```sh
-packaging/verify-release.sh --keep released v1.8.0 linux-x86_64-compat=target/rebuild/sdroxide
-diffoscope released/linux-x86_64-compat/sdroxide target/rebuild/sdroxide
+packaging/verify-release.sh --keep released v1.8.0 linux-x86_64-compat=target/rebuild/sdro
+diffoscope released/linux-x86_64-compat/sdro target/rebuild/sdro
 ```
 
 A difference in a path (`/home/you/...`) or a date points at the build

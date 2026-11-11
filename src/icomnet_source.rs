@@ -22,7 +22,7 @@
 //!   stations by their offset inside the passband.)
 //! * **12 kHz IF** — Icom's DRM output, a real IF in the audio stream. Mixed to
 //!   baseband and decimated by two here, it becomes a 24 kHz complex stream the
-//!   engine treats like any other front end, so sdroxide's own filters, noise
+//!   engine treats like any other front end, so sdro's own filters, noise
 //!   reduction and decoders apply over roughly ±12 kHz.
 //!
 //! Either way the *wide* panadapter is fed from the radio's own `27 00` scope
@@ -41,22 +41,22 @@
 //! was in the table, so what the trace proves is the transport, not the menu
 //! writes or the 689-bin sweep now built from its CI-V reference guide. The one
 //! thing that model has since been reported to do differently is its 12 kHz IF,
-//! which arrives mirrored: see `sdroxide_icomnet::protocol::Model::if_inverted`
+//! which arrives mirrored: see `sdro_icomnet::protocol::Model::if_inverted`
 //! for what that costs and how little of it Icom documents.
 //! Everything else — transmit, the other models' menu numbering, the meters —
-//! is still only exercised against `sdroxide_icomnet::sim`, and the session
+//! is still only exercised against `sdro_icomnet::sim`, and the session
 //! trace is copyable from the settings tab so a user with a radio can report
 //! what actually happened.
 
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
-use sdroxide_cat::{DUPLEX_FLOOR_HZ, civ};
-use sdroxide_dsp::Ddc;
-use sdroxide_icomnet::{IcomNetDevice, IcomNetOptions};
-use sdroxide_radio::rtrb;
-use sdroxide_radio::{Complex32, ControlUpdate, IqSource, Result};
-use sdroxide_types::{AgcMode, Band, CwKeying, IcomNetConfig, IcomRxSource, Mode, TxTelemetry};
+use sdro_cat::{DUPLEX_FLOOR_HZ, civ};
+use sdro_dsp::Ddc;
+use sdro_icomnet::{IcomNetDevice, IcomNetOptions};
+use sdro_radio::rtrb;
+use sdro_radio::{Complex32, ControlUpdate, IqSource, Result};
+use sdro_types::{AgcMode, Band, CwKeying, IcomNetConfig, IcomRxSource, Mode, TxTelemetry};
 
 use crate::dial::Dial;
 use crate::session_trace::TraceStore;
@@ -78,11 +78,11 @@ fn session_key(cfg: &IcomNetConfig) -> String {
 /// whether or not a session has run.
 pub fn diagnostics_or_hint(cfg: &IcomNetConfig) -> String {
     match TRACES.get(&session_key(cfg)) {
-        Some(t) => format!("{t}\n{}\n", sdroxide_icomnet::FIELD_REPORT_HINT),
+        Some(t) => format!("{t}\n{}\n", sdro_icomnet::FIELD_REPORT_HINT),
         None => format!(
             "No Icom LAN session has run yet for {} — connect to that radio first.\n\n{}\n",
             if cfg.address.trim().is_empty() { "this radio" } else { cfg.address.trim() },
-            sdroxide_icomnet::FIELD_REPORT_HINT
+            sdro_icomnet::FIELD_REPORT_HINT
         ),
     }
 }
@@ -134,7 +134,7 @@ const MENU_READ_WAIT: Duration = Duration::from_millis(500);
 /// The frames are written to the socket before the shutdown that follows them
 /// — the session thread drains its queue in order — but this is UDP, and the
 /// only thing that recovers a lost datagram is the radio noticing the gap and
-/// asking for it (see `sdroxide_icomnet::stream`). That request has to find a
+/// asking for it (see `sdro_icomnet::stream`). That request has to find a
 /// session still standing.
 const MENU_RESTORE_SETTLE: Duration = Duration::from_millis(250);
 
@@ -284,14 +284,14 @@ impl IcomNetSource {
         // The trace lives out here so a connect that *fails* still leaves one
         // behind — the wedged-radio and wrong-address sessions are exactly the
         // ones a bug report is filed about, and they never become a device.
-        let trace = sdroxide_icomnet::Trace::new();
+        let trace = sdro_icomnet::Trace::new();
         let dev = IcomNetDevice::connect_traced(
             IcomNetOptions {
                 address: cfg.address.clone(),
                 control_port: cfg.control_port,
                 username: cfg.username.clone(),
                 password: cfg.password.clone(),
-                client_name: "sdroxide".into(),
+                client_name: "sdro".into(),
                 rx_sample_rate: cfg.sample_rate_hz,
                 tx_sample_rate: cfg.sample_rate_hz,
                 tx_buffer_ms: cfg.tx_latency_ms,
@@ -447,7 +447,7 @@ impl IcomNetSource {
         match model.lan_afif_select {
             Some(item) => writes.push((item, self.rx_source.menu_value())),
             None if cfg.rx_source == IcomRxSource::If12k => notes.push(
-                "sdroxide does not know this model's menu numbering, so it cannot switch the \
+                "sdro does not know this model's menu numbering, so it cannot switch the \
                  LAN output to IF — set SET > Connectors > LAN AF/IF Output > Output Select \
                  to IF on the radio."
                     .into(),
@@ -468,7 +468,7 @@ impl IcomNetSource {
                     writes.extend(items.iter().map(|item| (*item, lan)));
                 }
                 None => notes.push(
-                    "sdroxide does not know this model's menu numbering, so it cannot switch \
+                    "sdro does not know this model's menu numbering, so it cannot switch \
                      the modulation input to LAN — set SET > Connectors > MOD Input on the \
                      radio, or transmit audio will not be heard."
                         .into(),
@@ -492,7 +492,7 @@ impl IcomNetSource {
     /// The reason the read comes first is issue #252: a radio left with its
     /// DATA and DATA-OFF modulation inputs on LAN is deaf to its own microphone
     /// and its own key the next time it is used standalone in the shack, and
-    /// nothing on the radio says why. sdroxide changes the setting because it
+    /// nothing on the radio says why. sdro changes the setting because it
     /// has to — transmit audio arrives over the network, and the rig only
     /// listens to one input at a time — but that is a loan, not a keep.
     ///
@@ -737,7 +737,7 @@ impl IcomNetSource {
             if self.transmitting {
                 // All three TX meters, as the serial CI-V path polls them: ALC
                 // is what the operator sets the drive by, and with only SWR
-                // asked for the ALC bar read SDRoxide's own level (#600).
+                // asked for the ALC bar read SDRO's own level (#600).
                 self.send(civ::read_swr_frame(self.civ_addr));
                 self.send(civ::read_alc_frame(self.civ_addr));
                 self.send(civ::read_po_frame(self.civ_addr));
@@ -751,7 +751,7 @@ impl IcomNetSource {
     /// Put the radio's own repeater shift back to simplex for `dial_hz`, unless
     /// that has already been done for this dial.
     ///
-    /// The HF/VHF split is [`sdroxide_cat`]'s: below 28 MHz nothing but a band
+    /// The HF/VHF split is [`sdro_cat`]'s: below 28 MHz nothing but a band
     /// stacking register can restore a duplex setting, so once per band is
     /// enough and the link stays quiet while the operator tunes; above it an
     /// auto-repeater function arms on the frequency and every move has to be
@@ -982,7 +982,7 @@ impl IqSource for IcomNetSource {
         };
         if wanted != self.rx_source {
             let item = self.dev.info().model.lan_afif_select.ok_or_else(|| {
-                sdroxide_radio::RadioError::Msg(
+                sdro_radio::RadioError::Msg(
                     "This Icom model has no known LAN AF/IF menu command; cannot switch receive path"
                         .into(),
                 )
@@ -1094,7 +1094,7 @@ impl IqSource for IcomNetSource {
     }
 
     /// The radio in front of us is the rig, so the mode control has to reach it
-    /// on both receive paths — including the 12 kHz IF, where sdroxide does the
+    /// on both receive paths — including the 12 kHz IF, where sdro does the
     /// demodulating but the radio's mode still picks the IF filter the stream
     /// arrives through, and its own display would otherwise disagree with ours.
     ///
@@ -1147,7 +1147,7 @@ impl IqSource for IcomNetSource {
     /// CAT rig: there is no demodulator here, so without this the width moved
     /// on screen and nothing changed in the audio. The engine only calls this
     /// while the radio is the one demodulating; on the 12 kHz IF the filter is
-    /// sdroxide's own.
+    /// sdro's own.
     fn set_control_filter(&mut self, mode: Mode, lo_hz: f64, hi_hz: f64) {
         if let Some(f) =
             civ::set_filter_frame(self.civ_addr, mode, self.rig_mode, lo_hz as f32, hi_hz as f32)
@@ -1223,7 +1223,7 @@ impl IqSource for IcomNetSource {
         self.squelch_set = true;
         self.send(civ::set_squelch_frame(self.civ_addr, frac));
     }
-    /// AF only. On the 12 kHz IF the stream is real spectrum that sdroxide
+    /// AF only. On the 12 kHz IF the stream is real spectrum that sdro
     /// demodulates itself, so the radio's gate decides nothing about the audio
     /// heard here and the engine's own threshold is the one that does.
     fn commands_squelch(&self) -> bool {
@@ -1420,7 +1420,7 @@ impl Drop for IcomNetSource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sdroxide_icomnet::sim::{Sim, SimOptions};
+    use sdro_icomnet::sim::{Sim, SimOptions};
 
     use crate::dial::FREQ_SETTLE;
 
@@ -1467,7 +1467,7 @@ mod tests {
     /// tune that simply never happened — and one poll period later the radio
     /// answers from where it always was, the settling guard runs out, and the
     /// dial snaps back. The operator's own remedy was to click again; this is
-    /// sdroxide doing it for them. The simulator swallows the first tune, which
+    /// sdro doing it for them. The simulator swallows the first tune, which
     /// is exactly what that loss looks like from this end.
     #[test]
     fn a_tune_the_radio_never_took_is_sent_again_until_it_sticks() {
@@ -1679,7 +1679,7 @@ mod tests {
         let sim = Sim::start(SimOptions { scope: false, ..Default::default() }).unwrap();
         let mut c = cfg(&sim);
         c.rx_source = IcomRxSource::If12k;
-        let item = sdroxide_icomnet::protocol::model_for(0xB6).lan_afif_select.unwrap();
+        let item = sdro_icomnet::protocol::model_for(0xB6).lan_afif_select.unwrap();
         sim.set_menu_item(item, IcomRxSource::If12k.menu_value());
         let mut src = IcomNetSource::open(&c).unwrap();
         assert!(!src.menu_restore.iter().any(|(i, _)| *i == item));
@@ -1712,16 +1712,16 @@ mod tests {
 
     #[test]
     fn engine_switches_receive_pipeline_and_blocks_hd_radio() {
-        use sdroxide_types::{Command, RadioEvent, RxId};
+        use sdro_types::{Command, RadioEvent, RxId};
         let sim = Sim::start(SimOptions { scope: false, ..Default::default() }).unwrap();
         let mut c = cfg(&sim);
         c.rx_source = IcomRxSource::If12k;
         let src = IcomNetSource::open(&c).unwrap();
         let caps = crate::icomnet_caps(&c, &src);
-        let mut h = sdroxide_radio::start_engine(
+        let mut h = sdro_radio::start_engine(
             Box::new(src),
             caps,
-            sdroxide_radio::EngineConfig::default(),
+            sdro_radio::EngineConfig::default(),
         );
         let thread = h.thread.take().unwrap();
         let mut audio_mode = None;
@@ -1764,9 +1764,9 @@ mod tests {
         receive(Mode::Usb, false, IF_OUT_RATE);
         h.cmd_tx.send(Command::SetMode { rx: RxId::Main, mode: Mode::Wfm }).unwrap();
         receive(Mode::Wfm, true, c.audio_bw_hz);
-        h.cmd_tx.send(Command::SelectVfo(sdroxide_types::Vfo::B)).unwrap();
+        h.cmd_tx.send(Command::SelectVfo(sdro_types::Vfo::B)).unwrap();
         receive(Mode::Usb, false, IF_OUT_RATE);
-        h.cmd_tx.send(Command::SelectVfo(sdroxide_types::Vfo::A)).unwrap();
+        h.cmd_tx.send(Command::SelectVfo(sdro_types::Vfo::A)).unwrap();
         receive(Mode::Wfm, true, c.audio_bw_hz);
         h.cmd_tx.send(Command::SetMode { rx: RxId::Main, mode: Mode::Usb }).unwrap();
         receive(Mode::Usb, false, IF_OUT_RATE);
@@ -1790,15 +1790,15 @@ mod tests {
     /// the one filtering — the IC-705 report was of the panel's own controls.
     #[test]
     fn on_af_the_panels_width_and_agc_reach_the_radio() {
-        use sdroxide_types::{Command, RxId};
+        use sdro_types::{Command, RxId};
         let sim = Sim::start(SimOptions { scope: false, ..Default::default() }).unwrap();
         let c = cfg(&sim);
         let src = IcomNetSource::open(&c).unwrap();
         let caps = crate::icomnet_caps(&c, &src);
-        let mut h = sdroxide_radio::start_engine(
+        let mut h = sdro_radio::start_engine(
             Box::new(src),
             caps,
-            sdroxide_radio::EngineConfig::default(),
+            sdro_radio::EngineConfig::default(),
         );
         let thread = h.thread.take().unwrap();
         let sent = |cmd: &[u8]| {
@@ -1812,20 +1812,20 @@ mod tests {
         thread.join().unwrap();
     }
 
-    /// On the 12 kHz IF sdroxide demodulates, so the width and AGC are its own
+    /// On the 12 kHz IF sdro demodulates, so the width and AGC are its own
     /// and the radio's are left wherever the operator set them.
     #[test]
     fn on_the_if_the_panels_width_and_agc_stay_in_the_app() {
-        use sdroxide_types::{Command, RadioEvent, RxId};
+        use sdro_types::{Command, RadioEvent, RxId};
         let sim = Sim::start(SimOptions { scope: false, ..Default::default() }).unwrap();
         let mut c = cfg(&sim);
         c.rx_source = IcomRxSource::If12k;
         let src = IcomNetSource::open(&c).unwrap();
         let caps = crate::icomnet_caps(&c, &src);
-        let mut h = sdroxide_radio::start_engine(
+        let mut h = sdro_radio::start_engine(
             Box::new(src),
             caps,
-            sdroxide_radio::EngineConfig::default(),
+            sdro_radio::EngineConfig::default(),
         );
         let thread = h.thread.take().unwrap();
         h.cmd_tx.send(Command::SetFilter { rx: RxId::Main, lo: 300.0, hi: 1300.0 }).unwrap();
@@ -1846,7 +1846,7 @@ mod tests {
             !sim.civ_frames()
                 .iter()
                 .any(|f| matches!(f.get(4..6), Some([0x1A, 0x03] | [0x16, 0x12]))),
-            "the radio was sent a filter or AGC while sdroxide is the one demodulating"
+            "the radio was sent a filter or AGC while sdro is the one demodulating"
         );
         drop(h);
         thread.join().unwrap();
@@ -1868,11 +1868,11 @@ mod tests {
 
         fn until(
             &mut self,
-            h: &sdroxide_radio::EngineHandles,
+            h: &sdro_radio::EngineHandles,
             what: &str,
             mut done: impl FnMut(&Self) -> bool,
         ) {
-            use sdroxide_types::RadioEvent;
+            use sdro_types::RadioEvent;
             wait_for(what, || {
                 while let Ok(event) = h.event_rx.try_recv() {
                     match event {
@@ -1897,15 +1897,15 @@ mod tests {
     /// rigctld client, say) is refused rather than shown.
     #[test]
     fn on_af_the_agc_has_no_off() {
-        use sdroxide_types::{Command, RxId};
+        use sdro_types::{Command, RxId};
         let sim = Sim::start(SimOptions { scope: false, ..Default::default() }).unwrap();
         let c = cfg(&sim);
         let src = IcomNetSource::open(&c).unwrap();
         let caps = crate::icomnet_caps(&c, &src);
-        let mut h = sdroxide_radio::start_engine(
+        let mut h = sdro_radio::start_engine(
             Box::new(src),
             caps,
-            sdroxide_radio::EngineConfig::default(),
+            sdro_radio::EngineConfig::default(),
         );
         let thread = h.thread.take().unwrap();
         let mut w = AgcWatch::new();
@@ -1922,21 +1922,21 @@ mod tests {
         thread.join().unwrap();
     }
 
-    /// On the 12 kHz IF the AGC is sdroxide's own and Off is real. Leaving the
+    /// On the 12 kHz IF the AGC is sdro's own and Off is real. Leaving the
     /// IF for AF with it off — WFM is too wide for the IF — lands on a preset
     /// the radio has, and coming back finds Off where it was left.
     #[test]
     fn off_is_offered_on_the_if_and_settled_on_the_way_to_af() {
-        use sdroxide_types::{Command, RxId};
+        use sdro_types::{Command, RxId};
         let sim = Sim::start(SimOptions { scope: false, ..Default::default() }).unwrap();
         let mut c = cfg(&sim);
         c.rx_source = IcomRxSource::If12k;
         let src = IcomNetSource::open(&c).unwrap();
         let caps = crate::icomnet_caps(&c, &src);
-        let mut h = sdroxide_radio::start_engine(
+        let mut h = sdro_radio::start_engine(
             Box::new(src),
             caps,
-            sdroxide_radio::EngineConfig::default(),
+            sdro_radio::EngineConfig::default(),
         );
         let thread = h.thread.take().unwrap();
         let mut w = AgcWatch::new();
@@ -1975,7 +1975,7 @@ mod tests {
     #[test]
     fn a_wide_panadapter_supplies_hd_iq_while_the_icom_switches_af_and_if() {
         use crate::panadapter_source::PanadapterSource;
-        use sdroxide_types::{DeviceCaps, PanadapterConfig};
+        use sdro_types::{DeviceCaps, PanadapterConfig};
 
         struct Receiver(f64, f64);
         impl IqSource for Receiver {
@@ -2218,7 +2218,7 @@ mod tests {
     #[test]
     fn switching_mode_sends_the_radio_a_set_mode() {
         // Field report, 2026-08-19: an IC-705 on the 12 kHz IF followed mode
-        // changes made at the radio but not ones made in sdroxide. The stream
+        // changes made at the radio but not ones made in sdro. The stream
         // is not `audio_mode`, so the engine's "command the rig's mode" gate
         // never fired — see `IqSource::commands_rx_mode`.
         let sim = Sim::start(SimOptions { scope: false, ..Default::default() }).unwrap();
@@ -2362,7 +2362,7 @@ mod tests {
     /// Issue #252: an IC-7300MK2 was left with DATA MOD and DATA OFF MOD on
     /// LAN, so the next time it was used standalone in the shack it put out a
     /// carrier and nothing else — no microphone, no key, and nothing on the
-    /// radio saying why. What sdroxide borrows from the Set-mode menu it has
+    /// radio saying why. What sdro borrows from the Set-mode menu it has
     /// to give back.
     #[test]
     fn the_menu_items_the_session_borrowed_go_back_when_it_ends() {
@@ -2383,7 +2383,7 @@ mod tests {
         assert_eq!(
             sim.menu_item(0x0079),
             0x00,
-            "the LAN output select was left as sdroxide set it"
+            "the LAN output select was left as sdro set it"
         );
     }
 
@@ -2451,7 +2451,7 @@ mod tests {
     /// Field report, issue #183: an IC-7760 over its RF deck's LAN port came
     /// up with both "menu numbering unknown" notes, so its LAN output stayed on
     /// AF — a 3 kHz-wide audio FFT where the operator had asked for the 12 kHz
-    /// IF — and nothing it transmitted was modulated by sdroxide at all.
+    /// IF — and nothing it transmitted was modulated by sdro at all.
     #[test]
     fn an_ic7760_gets_its_own_menu_numbers_and_every_one_of_its_data_slots() {
         let sim = Sim::start(SimOptions {
@@ -2521,7 +2521,7 @@ mod tests {
     }
 
     /// Field report, issue #190: an IC-7610 over its LAN port was told
-    /// sdroxide did not know its menu numbering, and so had to be sent to
+    /// sdro did not know its menu numbering, and so had to be sent to
     /// SET > Connectors > MOD Input by hand before anything it transmitted was
     /// modulated at all.
     #[test]
@@ -2626,7 +2626,7 @@ mod tests {
     fn the_scope_span_is_commanded_rather_than_left_wherever_the_radio_had_it() {
         let sim = Sim::start(SimOptions { civ_address: 0xA4, ..Default::default() }).unwrap();
         let mut c = cfg(&sim);
-        c.scope_span = sdroxide_types::IcomScopeSpan::Khz500;
+        c.scope_span = sdro_types::IcomScopeSpan::Khz500;
         let _src = IcomNetSource::open(&c).expect("open");
         wait_for("centre mode and a ±500 kHz span", || {
             let frames = sim.civ_frames();
@@ -2648,7 +2648,7 @@ mod tests {
     fn leaving_the_span_to_the_radio_touches_neither_setting() {
         let sim = Sim::start(SimOptions { civ_address: 0xA4, ..Default::default() }).unwrap();
         let mut c = cfg(&sim);
-        c.scope_span = sdroxide_types::IcomScopeSpan::Radio;
+        c.scope_span = sdro_types::IcomScopeSpan::Radio;
         let mut src = IcomNetSource::open(&c).expect("open");
         // Wait for something the session does send, so "nothing was sent" is a
         // real observation rather than a race with the opening burst.

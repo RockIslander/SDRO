@@ -33,7 +33,7 @@ env:
 
 jobs:
   deb:
-    name: sdroxide .deb (linux-x86_64-compat)
+    name: sdro .deb (linux-x86_64-compat)
     runs-on: ubuntu-latest
     # The release's -compat image, by digest: `ubuntu:22.04` is re-pushed every
     # few weeks, and a different base is a different package.
@@ -80,9 +80,9 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       # The embed-web feature bakes this dist into the binary, which is what
-      # makes the .deb's `sdroxide --server` useful with nothing else installed.
+      # makes the .deb's `sdro --server` useful with nothing else installed.
       - name: Build web client
-        working-directory: crates/sdroxide-web
+        working-directory: crates/sdro-web
         run: trunk build --release
 
       - name: Compute version
@@ -96,21 +96,21 @@ jobs:
           {
             echo "RELEASE_VERSION=$RELEASE_VERSION"
             echo "CARGO_VERSION=$CARGO_VERSION"
-            echo "PKG=sdroxide-$RELEASE_VERSION-linux-x86_64-compat"
+            echo "PKG=sdro-$RELEASE_VERSION-linux-x86_64-compat"
           } >> "$GITHUB_ENV"
           {
-            echo "### sdroxide $CARGO_VERSION ($RELEASE_VERSION)"
+            echo "### sdro $CARGO_VERSION ($RELEASE_VERSION)"
             echo
           } >> "$GITHUB_STEP_SUMMARY"
 
       # The same build as the release's standard variant: CAT/HPSDR/TCI and the
       # native USB drivers, no SoapySDR, with rtl_433 and the web client in.
       - name: Build
-        run: cargo build --release --locked -p sdroxide --no-default-features --features embed-web,rtl433
+        run: cargo build --release --locked -p sdro --no-default-features --features embed-web,rtl433
 
       - name: Package .deb
         run: |
-          strip target/release/sdroxide
+          strip target/release/sdro
           mkdir -p out
           # Pinned for the same reason as the compiler; it takes its file times
           # from SOURCE_DATE_EPOCH.
@@ -118,7 +118,7 @@ jobs:
           # --no-build: the binary above is the one packaged. The metadata in
           # Cargo.toml supplies the udev rules, desktop entry, icons, voices,
           # notices and README, and dpkg-shlibdeps computes Depends.
-          cargo deb --no-build -p sdroxide -o "out/$PKG.deb"
+          cargo deb --no-build -p sdro -o "out/$PKG.deb"
           (cd out && sha256sum -- *.deb > SHA256SUMS && cat SHA256SUMS)
           echo
           dpkg-deb -I "out/$PKG.deb" | sed -n '2,12p' >> "$GITHUB_STEP_SUMMARY"

@@ -2,24 +2,24 @@
 
 _Last updated: 7 November 2026_
 
-sdroxide is free, open-source software (GPL-3.0-or-later). It contains **no
+sdro is free, open-source software (GPL-3.0-or-later). It contains **no
 telemetry, no analytics, no crash reporting and no advertising**. It does not
-collect information about you or your computer, and the sdroxide project runs
+collect information about you or your computer, and the sdro project runs
 no server that receives any.
 
-This page lists every case where sdroxide connects to the internet, so you can
+This page lists every case where sdro connects to the internet, so you can
 see what leaves your computer and when.
 
 ## What happens without you doing anything
 
-On a fresh install, sdroxide makes only these requests. Each is a plain
+On a fresh install, sdro makes only these requests. Each is a plain
 download. Apart from the standard request information any web client sends
-(your IP address and a `User-Agent: sdroxide/<version>` header), none of them
+(your IP address and a `User-Agent: sdro/<version>` header), none of them
 sends anything about you, your station or your computer.
 
 | Request | Purpose | How often | Turn it off |
 |---|---|---|---|
-| `https://sdroxide.com/script.js` | Checks whether a newer sdroxide release exists | Once per start | Settings → UI → update check |
+| `https://sdroxide.com/script.js` | Checks whether a newer sdro release exists | Once per start | Settings → UI → update check |
 | `https://www.hamqsl.com/solarxml.php` | Downloads the published HF band-conditions forecast | At most once an hour (cached) | Settings → UI → band-conditions forecast |
 | `http://www.eibispace.de/dx/sked-<season>.csv` | Downloads the EiBi shortwave broadcast schedule (about 1 MB) | Once per broadcast season (cached) | Settings → UI → broadcast schedule |
 
@@ -31,7 +31,7 @@ by default.
 ## Features that send data, only once you set them up
 
 Some features are about sharing with the amateur radio community. Each one
-sends data **directly to the service it names**, never via the sdroxide
+sends data **directly to the service it names**, never via the sdro
 project, and only after you have entered your callsign or account details or
 switched the feature on.
 
@@ -63,37 +63,37 @@ request information described above:
 ## Radios and receivers you connect to
 
 When you use a network radio or receiver (KiwiSDR, SpyServer, rtl_tcp, TCI,
-Icom LAN, FlexRadio, HPSDR, PlutoSDR, flrig, rigctld, and so on), sdroxide
+Icom LAN, FlexRadio, HPSDR, PlutoSDR, flrig, rigctld, and so on), sdro
 talks to the address you entered. A public KiwiSDR receiver shows its owner a
 user name for you, which is your callsign unless you set a different one. To find HPSDR and PlutoSDR radios,
-sdroxide lists your computer's network adapters and searches the local network.
+sdro lists your computer's network adapters and searches the local network.
 That information stays on your computer.
 
 Picking a receiver on the Public SDRs map checks whether it answers: a KiwiSDR
 `/status` request, a SpyServer greeting, or a connection to the address the
 directory lists. Nothing is checked until you pick one.
 
-sdroxide's own remote-operation server and TCI server only run if you start
+sdro's own remote-operation server and TCI server only run if you start
 them, and they listen only on the addresses you configure.
 
 ## Data stored on your computer
 
 Settings, logbooks, recordings, decoded messages and cached downloads are
 stored only on your computer, in your user profile (on Windows under
-`%APPDATA%\sdroxide`, on Linux under `~/.config/sdroxide` and
-`~/.local/share/sdroxide`). Account passwords and API keys you enter are
+`%APPDATA%\sdro`, on Linux under `~/.config/sdro` and
+`~/.local/share/sdro`). Account passwords and API keys you enter are
 stored there **in plain text**, so protect that folder as you would any
-other file containing passwords. Uninstalling sdroxide leaves this folder in
+other file containing passwords. Uninstalling sdro leaves this folder in
 place; delete it to remove everything.
 
 ## Third-party services
 
 When you use a feature that talks to a third-party service, that service's
-own privacy policy applies to what it receives. The sdroxide project does
+own privacy policy applies to what it receives. The sdro project does
 not control or receive that data.
 
 ## Changes and contact
 
 Changes to this policy are tracked in this file's history in the
-[sdroxide repository](https://github.com/dividebysandwich/sdroxide).
+[sdro repository](https://github.com/dividebysandwich/sdroxide).
 Questions can be raised as an issue there.

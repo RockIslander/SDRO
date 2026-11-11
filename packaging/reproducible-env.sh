@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Print the environment a reproducible build of sdroxide needs, as NAME=value
+# Print the environment a reproducible build of sdro needs, as NAME=value
 # lines. CI appends them to $GITHUB_ENV; to rebuild a release by hand, run this
 # from the top of the checkout (after rustup, before cargo) and export what it
 # prints (the values hold spaces, so not through `eval`):

@@ -30,17 +30,17 @@ mod usb_audio_source;
 
 use anyhow::{Context, bail};
 use clap::Parser;
-use sdroxide_config::Settings;
-use sdroxide_radio::{ConvertedSource, FileSource, IqSource, SigGenSource, override_caps_ranges};
+use sdro_config::Settings;
+use sdro_radio::{ConvertedSource, FileSource, IqSource, SigGenSource, override_caps_ranges};
 #[cfg(feature = "soapy")]
-use sdroxide_radio::{DeviceInfo, SoapyDevice, enumerate_devices};
-use sdroxide_types::{Backend, DeviceCaps, FobosPort, IcomNetConfig, RadioConfig};
+use sdro_radio::{DeviceInfo, SoapyDevice, enumerate_devices};
+use sdro_types::{Backend, DeviceCaps, FobosPort, IcomNetConfig, RadioConfig};
 
 #[derive(Parser, Debug, Clone)]
 // A bare `version` would take the crate version, which cannot tell a nightly
 // apart from the release it was cut from — and `--version` is the first thing
-// asked of a build whose provenance is in doubt. See `sdroxide-version`.
-#[command(version = sdroxide_version::VERSION, about)]
+// asked of a build whose provenance is in doubt. See `sdro-version`.
+#[command(version = sdro_version::VERSION, about)]
 struct Cli {
     /// SoapySDR device args, e.g. "driver=hackrf" (default: config, then first device)
     #[arg(long)]
@@ -93,7 +93,7 @@ struct Cli {
     ///
     /// Default: the mode the last session was left in.
     #[arg(long)]
-    mode: Option<sdroxide_types::Mode>,
+    mode: Option<sdro_types::Mode>,
 
     /// RX antenna port, as the device names it ("LNAH", "TX/RX"). Run --probe
     /// to list what the front end offers.
@@ -137,7 +137,7 @@ struct Cli {
     #[arg(long)]
     server: bool,
 
-    /// Connect as a native remote client to a running sdroxide server
+    /// Connect as a native remote client to a running sdro server
     /// (e.g. "host:4950" or a full ws:// URL)
     ///
     /// A bare address reaches the station's first radio. To reach one of its
@@ -204,14 +204,14 @@ impl Cli {
     /// [`Cli::restore_session`] before anything reads it; the fallback is only
     /// so this can never panic on a code path that skipped that.
     fn center_hz(&self) -> f64 {
-        self.freq.unwrap_or_else(|| sdroxide_config::Session::default().freq_hz)
+        self.freq.unwrap_or_else(|| sdro_config::Session::default().freq_hz)
     }
 
     /// Fill in the frequency and mode the operator did not ask for from where
     /// the last session was left, so the program comes back up where it was.
     /// Returns the mode the engine should start in.
-    fn restore_session(&mut self) -> Option<sdroxide_types::Mode> {
-        self.apply_session(sdroxide_config::load_session())
+    fn restore_session(&mut self) -> Option<sdro_types::Mode> {
+        self.apply_session(sdro_config::load_session())
     }
 
     /// The command line always wins; whatever it left out comes from the
@@ -221,7 +221,7 @@ impl Cli {
     /// which is not always VFO A. Only that one reaches the front end — the
     /// other VFO never had a centre frequency to ask for — and the engine
     /// restores the pair once it has read the same session itself.
-    fn apply_session(&mut self, session: sdroxide_config::Session) -> Option<sdroxide_types::Mode> {
+    fn apply_session(&mut self, session: sdro_config::Session) -> Option<sdro_types::Mode> {
         // Remembered before the session fills it in, because after that
         // `freq.is_some()` is true whether the operator typed one or not — and
         // an I/Q capture's own centre frequency has to lose to the command line
@@ -271,8 +271,8 @@ fn main() -> anyhow::Result<()> {
     // file here would leave a document in this machine's config directory that
     // looks authoritative and changes nothing.
     if cli.connect.is_none() {
-        sdroxide_types::set_band_plan(sdroxide_config::load_band_plan());
-        sdroxide_types::set_region(settings.region);
+        sdro_types::set_band_plan(sdro_config::load_band_plan());
+        sdro_types::set_region(settings.region);
     }
 
     if cli.probe {
@@ -316,7 +316,7 @@ fn main() -> anyhow::Result<()> {
     if cli.server {
         // The same roster the GUI brings up, for the same reason: a station
         // with two radios has two radios whether or not anybody is sitting at
-        // it. Each is served under its own address — see `sdroxide-server`.
+        // it. Each is served under its own address — see `sdro-server`.
         let radios = boot_radios(&mut cli, &settings)?;
         let port = cli.port.unwrap_or(settings.server_port);
         // Sanitized for the radios a client adds later, exactly as the GUI
@@ -358,17 +358,17 @@ pub struct RadioBoot {
     pub id: u32,
     pub name: String,
     /// Whether the operator has this radio switched on — the `enabled` field of
-    /// its entry in the roster ([`sdroxide_config::RadioSlot`]). A radio that is off boots on the quiet stand-in, and the
+    /// its entry in the roster ([`sdro_config::RadioSlot`]). A radio that is off boots on the quiet stand-in, and the
     /// tab shell needs to know which state its switch is in.
     pub enabled: bool,
     pub source: Box<dyn IqSource>,
     pub caps: DeviceCaps,
-    pub initial_mode: Option<sdroxide_types::Mode>,
+    pub initial_mode: Option<sdro_types::Mode>,
     /// Antenna ports named on the command line (RX, TX) — radio 0 only; the
     /// remembered session fills in whichever the operator left out.
     pub initial_antenna: (Option<String>, Option<String>),
-    pub reopen: Option<sdroxide_radio::ReopenFn>,
-    pub store: sdroxide_config::Store,
+    pub reopen: Option<sdro_radio::ReopenFn>,
+    pub store: sdro_config::Store,
     /// Where to write a raw IQ capture, from `--record-iq`. Radio 0 only: the
     /// flag names one file, and two radios writing it would interleave two
     /// different bands into one stream.
@@ -383,11 +383,11 @@ pub struct RadioBoot {
 /// Shared by the GUI and the server, which differ in what they do with the
 /// radios, not in which ones the station has.
 fn boot_radios(cli: &mut Cli, settings: &Settings) -> anyhow::Result<Vec<RadioBoot>> {
-    let roster = sdroxide_config::load_radios();
+    let roster = sdro_config::load_radios();
     let owners = panadapter_owners();
     let mut radios = Vec::new();
     for (i, slot) in roster.radios.iter().enumerate() {
-        let store = sdroxide_config::Store::radio(slot.id);
+        let store = sdro_config::Store::radio(slot.id);
         // Somebody else's receiver: its device belongs to the radio that
         // borrowed it, and opening it twice would take it away from them. It
         // still gets an engine and a scope of its own, so its interface stays
@@ -510,8 +510,8 @@ fn boot_radios(cli: &mut Cli, settings: &Settings) -> anyhow::Result<Vec<RadioBo
 /// Re-reads the persisted radio config + settings each call and opens at the
 /// current dial. Fallible so a bad new config leaves the current interface
 /// running.
-fn reopen_factory(cli: &Cli) -> sdroxide_radio::ReopenFn {
-    reopen_factory_for(cli, sdroxide_config::Store::station(), 0)
+fn reopen_factory(cli: &Cli) -> sdro_radio::ReopenFn {
+    reopen_factory_for(cli, sdro_config::Store::station(), 0)
 }
 
 /// [`reopen_factory`], reading `radio.json` from one radio's scope. The
@@ -533,9 +533,9 @@ fn reopen_factory(cli: &Cli) -> sdroxide_radio::ReopenFn {
 /// switching a radio off is that its device is let go.
 fn reopen_factory_for(
     cli: &Cli,
-    store: sdroxide_config::Store,
+    store: sdro_config::Store,
     id: u32,
-) -> sdroxide_radio::ReopenFn {
+) -> sdro_radio::ReopenFn {
     let cli = cli.clone();
     // Whether the last thing this factory handed back was the switched-off
     // stand-in — which, alone among the stand-ins, has stopped asking to be
@@ -545,7 +545,7 @@ fn reopen_factory_for(
     // switched on that stays dark until somebody presses something again. On
     // that one path a device that isn't there yet becomes the ordinary
     // reconnecting stand-in instead, and the engine takes it from there.
-    let mut was_off = !sdroxide_config::load_radios().is_enabled(id);
+    let mut was_off = !sdro_config::load_radios().is_enabled(id);
     // Whether this radio already stands in for a lent receiver. See
     // [`lent_answer`].
     let mut was_lent = panadapter_owners().contains_key(&id);
@@ -568,7 +568,7 @@ fn reopen_factory_for(
             Some(Err(e)) => return Err(e),
             None => {}
         }
-        if !sdroxide_config::load_radios().is_enabled(id) {
+        if !sdro_config::load_radios().is_enabled(id) {
             was_off = true;
             return Ok((
                 Box::new(null_source::NullSource::off(c.center_hz())) as Box<dyn IqSource>,
@@ -632,17 +632,17 @@ fn secondary_cli(cli: &Cli) -> Cli {
 /// TX hardware gains at minimum, tune drive default 5%, ham-band lockout.
 fn tx_tune_test(
     source: Box<dyn IqSource>,
-    caps: sdroxide_types::DeviceCaps,
+    caps: sdro_types::DeviceCaps,
     tx_ham_only: bool,
     secs: f64,
 ) -> anyhow::Result<()> {
-    use sdroxide_types::{Command, RadioEvent};
+    use sdro_types::{Command, RadioEvent};
     use std::time::Duration;
 
-    let mut handles = sdroxide_radio::start_engine(
+    let mut handles = sdro_radio::start_engine(
         source,
         caps,
-        sdroxide_radio::EngineConfig { tx_ham_only, ..Default::default() },
+        sdro_radio::EngineConfig { tx_ham_only, ..Default::default() },
     );
     let engine_thread = handles.thread.take();
     std::thread::sleep(Duration::from_millis(400));
@@ -682,17 +682,17 @@ fn tx_tune_test(
 /// gain (same emission level as `--tx-tune`).
 fn ft8_cq_test(
     source: Box<dyn IqSource>,
-    caps: sdroxide_types::DeviceCaps,
+    caps: sdro_types::DeviceCaps,
     tx_ham_only: bool,
     secs: f64,
 ) -> anyhow::Result<()> {
-    use sdroxide_types::{Command, DigiConfig, Mode, RadioEvent, RxId};
+    use sdro_types::{Command, DigiConfig, Mode, RadioEvent, RxId};
     use std::time::Duration;
 
-    let mut handles = sdroxide_radio::start_engine(
+    let mut handles = sdro_radio::start_engine(
         source,
         caps,
-        sdroxide_radio::EngineConfig {
+        sdro_radio::EngineConfig {
             tx_ham_only,
             initial_mode: Some(Mode::Ft8),
             ..Default::default()
@@ -756,7 +756,7 @@ fn freedv_reporter_probe(host_arg: &str, secs: f64) -> anyhow::Result<()> {
     println!("FreeDV Reporter probe (view role — not visible to others): {host}:{port}");
     println!("listening for {secs:.0} s…\n");
 
-    let s = sdroxide_net::freedv_reporter_probe(host, port, secs);
+    let s = sdro_net::freedv_reporter_probe(host, port, secs);
 
     if s.event_counts.is_empty() {
         println!("events: (none)");
@@ -806,24 +806,24 @@ fn freedv_reporter_probe(host_arg: &str, secs: f64) -> anyhow::Result<()> {
 /// end-to-end run with no radio and no sound card.
 fn rade_rx_test(
     source: Box<dyn IqSource>,
-    caps: sdroxide_types::DeviceCaps,
+    caps: sdro_types::DeviceCaps,
     tx_ham_only: bool,
     secs: f64,
 ) -> anyhow::Result<()> {
-    use sdroxide_types::{Command, Mode, RadioEvent, RxId};
+    use sdro_types::{Command, Mode, RadioEvent, RxId};
     use std::time::Duration;
 
     // The receive chain — and with it the decoder's audio tap — only exists
     // when the engine has somewhere to play audio. Give it a ring buffer we
     // drain and throw away, so the test needs no sound card.
     let (producer, mut sink) = rtrb::RingBuffer::<f32>::new(96_000);
-    let mut handles = sdroxide_radio::start_engine(
+    let mut handles = sdro_radio::start_engine(
         source,
         caps,
-        sdroxide_radio::EngineConfig {
+        sdro_radio::EngineConfig {
             tx_ham_only,
             initial_mode: Some(Mode::Rade),
-            audio: Some(sdroxide_radio::AudioParams { producer, out_rate: 48_000.0 }),
+            audio: Some(sdro_radio::AudioParams { producer, out_rate: 48_000.0 }),
             ..Default::default()
         },
     );
@@ -897,7 +897,7 @@ fn probe(cli: &Cli, settings: &Settings) -> anyhow::Result<()> {
 }
 
 fn probe_rtlsdr() {
-    let devices = sdroxide_rtlsdr::list();
+    let devices = sdro_rtlsdr::list();
     if devices.is_empty() {
         println!("No RTL-SDR dongles found on USB.");
     } else {
@@ -910,7 +910,7 @@ fn probe_rtlsdr() {
 }
 
 fn probe_rx888() {
-    let devices = sdroxide_rx888::list();
+    let devices = sdro_rx888::list();
     if devices.is_empty() {
         println!("No RX-888 receivers found on USB.");
     } else {
@@ -932,7 +932,7 @@ fn probe_rx888() {
 }
 
 fn probe_airspyhf() {
-    let devices = sdroxide_airspyhf::list();
+    let devices = sdro_airspyhf::list();
     if devices.is_empty() {
         println!("No Airspy HF+ receivers found on USB.");
     } else {
@@ -954,7 +954,7 @@ fn probe_airspyhf() {
 /// the library may simply not be installed. Each of those is a different thing
 /// to say.
 fn probe_lime() {
-    match sdroxide_lime::try_list() {
+    match sdro_lime::try_list() {
         Err(e) => println!("LimeSDR: {e}\n"),
         Ok(found) => {
             if found.devices.is_empty() {
@@ -982,7 +982,7 @@ fn probe_lime() {
 }
 
 fn probe_elad() {
-    let devices = sdroxide_elad::list();
+    let devices = sdro_elad::list();
     if devices.is_empty() {
         println!("No ELAD FDM-DUO or FDM-S receivers found on USB.");
     } else {
@@ -999,7 +999,7 @@ fn probe_elad() {
 }
 
 fn probe_airspy() {
-    let devices = sdroxide_airspy::list();
+    let devices = sdro_airspy::list();
     if devices.is_empty() {
         println!("No Airspy R2 or Mini receivers found on USB.");
     } else {
@@ -1018,10 +1018,10 @@ fn probe_airspy() {
 ///
 /// A prototype RFOne enumerates on the Airspy R2's own USB id, so the
 /// enumeration only claims such a board when its descriptors say HydraSDR — see
-/// `sdroxide_hydrasdr::usb`. Anything on that id that does *not* is left to the
+/// `sdro_hydrasdr::usb`. Anything on that id that does *not* is left to the
 /// Airspy list above, which is why running both probes is worth it.
 fn probe_hydrasdr() {
-    let devices = sdroxide_hydrasdr::list();
+    let devices = sdro_hydrasdr::list();
     if devices.is_empty() {
         println!("No HydraSDR RFOne receivers found on USB.");
     } else {
@@ -1034,7 +1034,7 @@ fn probe_hydrasdr() {
 }
 
 fn probe_hackrf() {
-    let devices = sdroxide_hackrf::list();
+    let devices = sdro_hackrf::list();
     if devices.is_empty() {
         println!("No HackRFs found on USB.");
     } else {
@@ -1054,7 +1054,7 @@ fn probe_hackrf() {
 fn probe_sdrplay() {
     // Unlike the USB probes this one can fail three different ways, each with
     // a different fix, so the failure text is the whole point of printing it.
-    match sdroxide_sdrplay::try_list() {
+    match sdro_sdrplay::try_list() {
         Ok(devices) if devices.is_empty() => {
             println!("No SDRplay RSPs reported by the SDRplay API service.");
         }
@@ -1097,7 +1097,7 @@ fn probe_soapy(_cli: &Cli, _settings: &Settings) -> anyhow::Result<()> {
 }
 
 #[cfg(feature = "soapy")]
-fn print_caps(caps: &sdroxide_types::DeviceCaps) {
+fn print_caps(caps: &sdro_types::DeviceCaps) {
     let fmt_mhz = |hz: f64| format!("{:.3} MHz", hz / 1e6);
     println!("  driver        : {}", caps.driver);
     println!("  label         : {}", caps.label);
@@ -1191,7 +1191,7 @@ fn open_source(cli: &Cli, settings: &Settings) -> anyhow::Result<(Box<dyn IqSour
     // retrying this same interface in the background (`IqSource::needs_reopen`),
     // so a rig that simply wasn't ready attaches by itself; Settings → Radio is
     // only needed to choose a *different* one.
-    let radio = sdroxide_config::load_radio_config();
+    let radio = sdro_config::load_radio_config();
     match open_converted_source(&radio, cli, settings) {
         Ok(pair) => Ok(pair),
         Err(e) => {
@@ -1239,7 +1239,7 @@ fn open_converted_source(
     // still in the hardware's own domain, and that sum is below DC — see
     // `converter_open_hz`.
     let offset = plan.offset_for(cli.center_hz());
-    let hw = sdroxide_radio::converter_open_hz(cli.center_hz(), offset);
+    let hw = sdro_radio::converter_open_hz(cli.center_hz(), offset);
     if hw != cli.center_hz() + offset {
         tracing::info!(
             "the dial was on {:.6} MHz, which is where the hardware is rather than where this \
@@ -1253,7 +1253,7 @@ fn open_converted_source(
     // Device ranges down into the operator's domain first, then whatever the
     // operator stated on top of them — that order is what makes a typed range
     // mean the dial rather than the I.F.
-    let caps = sdroxide_radio::plan_caps(caps, &plan, &radio.freq_ranges_rx, &radio.freq_ranges_tx);
+    let caps = sdro_radio::plan_caps(caps, &plan, &radio.freq_ranges_rx, &radio.freq_ranges_tx);
     log_stated_ranges(radio, &caps);
     Ok((Box::new(ConvertedSource::with_plan_at_dial(source, plan, cli.center_hz())), caps))
 }
@@ -1267,10 +1267,10 @@ fn open_converted_source(
 /// offset, and to the bare radio when that is zero as well, which is what keeps
 /// HF working on a station whose only converter is a 2 m transverter
 /// (issue #278).
-fn converter_plan(radio: &RadioConfig) -> sdroxide_radio::ConverterPlan {
-    use sdroxide_radio::ConverterStep;
+fn converter_plan(radio: &RadioConfig) -> sdro_radio::ConverterPlan {
+    use sdro_radio::ConverterStep;
     let mut steps: Vec<ConverterStep> = Vec::new();
-    for x in radio.transverters.iter().take(sdroxide_types::MAX_TRANSVERTERS) {
+    for x in radio.transverters.iter().take(sdro_types::MAX_TRANSVERTERS) {
         if !x.enabled || !x.is_band() || !x.offset_hz.is_finite() {
             continue;
         }
@@ -1298,7 +1298,7 @@ fn converter_plan(radio: &RadioConfig) -> sdroxide_radio::ConverterPlan {
     let offset = radio.converter_offset_hz;
     if offset != 0.0 && offset.is_finite() {
         // The transmit line is a separate fact about the station, and the
-        // operator states it — see `sdroxide_types::ConverterTx`.
+        // operator states it — see `sdro_types::ConverterTx`.
         let tx_offset = radio.converter_tx.offset_hz(offset);
         tracing::info!(
             "frequency converter: hardware tuned {:.6} MHz above the dial; transmit {}",
@@ -1317,7 +1317,7 @@ fn converter_plan(radio: &RadioConfig) -> sdroxide_radio::ConverterPlan {
             tx_drive: None,
         });
     }
-    sdroxide_radio::ConverterPlan::from_steps(steps)
+    sdro_radio::ConverterPlan::from_steps(steps)
 }
 
 /// Open a radio that borrows another roster radio's receiver as its panadapter:
@@ -1341,7 +1341,7 @@ fn open_paired_source(
     // radio that used to draw its spectrum. Say so and open it on its own; the
     // Panadapter box is empty of candidates now, so the operator's next visit to
     // the dialog shows the pairing already undone.
-    if !sdroxide_config::load_radios().radios.iter().any(|s| s.id == id) {
+    if !sdro_config::load_radios().radios.iter().any(|s| s.id == id) {
         tracing::warn!(
             "the panadapter receiver (radio {}) is no longer in the roster; opening this radio on \
              its own",
@@ -1351,7 +1351,7 @@ fn open_paired_source(
         plain.panadapter = Default::default();
         return open_converted_source(&plain, cli, settings);
     }
-    let rx_cfg = sdroxide_config::Store::radio(id).load_radio_config();
+    let rx_cfg = sdro_config::Store::radio(id).load_radio_config();
     // One level only. Chains and cycles are refused here rather than allowed to
     // recurse: two radios attached to each other would each try to open the
     // other's device, and neither would ever finish.
@@ -1387,7 +1387,7 @@ fn open_paired_source(
 /// open its own device — the radio that borrowed it does — so it comes up on
 /// the stand-in source instead, with a tab that says as much.
 fn panadapter_owners() -> std::collections::HashMap<u32, u32> {
-    let roster = sdroxide_config::load_radios();
+    let roster = sdro_config::load_radios();
     let mut owners = std::collections::HashMap::new();
     for slot in &roster.radios {
         // A radio that is switched off opens nothing, so it borrows nothing:
@@ -1397,7 +1397,7 @@ fn panadapter_owners() -> std::collections::HashMap<u32, u32> {
         if !slot.enabled {
             continue;
         }
-        let cfg = sdroxide_config::Store::radio(slot.id).load_radio_config();
+        let cfg = sdro_config::Store::radio(slot.id).load_radio_config();
         let Some(rx) = cfg.panadapter.source_radio else { continue };
         // Neither of the two ways a pairing can eat itself gets to boot.
         if rx == slot.id {
@@ -1448,7 +1448,7 @@ fn log_stated_ranges(radio: &RadioConfig, caps: &DeviceCaps) {
         if !stated.is_empty() {
             tracing::info!(
                 "{dir} tuning range set in the configuration: {} MHz",
-                sdroxide_types::format_freq_ranges(applied)
+                sdro_types::format_freq_ranges(applied)
             );
         }
     }
@@ -1552,7 +1552,7 @@ fn filter_names_driver(filter: &str) -> bool {
 /// which need entirely different advice.
 #[cfg(feature = "soapy")]
 fn selectable_soapy_devices(filter: &str) -> anyhow::Result<(Vec<DeviceInfo>, Vec<DeviceInfo>)> {
-    use sdroxide_types::SoapyDeviceInfo;
+    use sdro_types::SoapyDeviceInfo;
     let all = enumerate_devices(filter).context("SoapySDR enumeration failed")?;
     if filter_names_driver(filter) {
         return Ok((all, Vec::new()));
@@ -1627,7 +1627,7 @@ fn open_soapy_source(
         "SoapySDR support is not compiled into this build — open Settings → Radio and pick a \
          built-in interface (HackRF, RTL-SDR, Airspy, AirspyHF+, SDRplay, RX-888, LimeSDR, \
          PlutoSDR, HPSDR, a CAT rig, a network radio…), or install the SoapySDR build of \
-         sdroxide"
+         sdro"
     )
 }
 
@@ -1675,7 +1675,7 @@ fn open_hpsdr_source(
     let ip: std::net::Ipv4Addr = if let Some(s) = radio.hpsdr.target_ip() {
         s.trim().parse().with_context(|| format!("invalid HPSDR IP address {s:?}"))?
     } else {
-        let found = sdroxide_hpsdr::discover_default();
+        let found = sdro_hpsdr::discover_default();
         let dev = found.iter().find(|d| d.supported()).ok_or_else(|| {
             anyhow::anyhow!("no HPSDR device found on the network — enter a target IP in Settings")
         })?;
@@ -1693,7 +1693,7 @@ fn open_hpsdr_source(
     );
     if src.io_inputs_offered() {
         caps.antennas_rx =
-            sdroxide_types::HpsdrIoRxInput::ALL.iter().map(|i| i.label().to_string()).collect();
+            sdro_types::HpsdrIoRxInput::ALL.iter().map(|i| i.label().to_string()).collect();
     }
     Ok((Box::new(src), caps))
 }
@@ -1705,14 +1705,14 @@ fn open_hpsdr_source(
 /// 0`) has no transmitter: the board has one DUC, and it belongs to the DDC-0
 /// radio.
 fn hpsdr_caps(board: &str, sample_rate: f64, protocol: u8, has_lna: bool, ddc: u8) -> DeviceCaps {
-    let hermes_lite = sdroxide_hpsdr::board_has_lna_gain(board);
+    let hermes_lite = sdro_hpsdr::board_has_lna_gain(board);
     let nyquist = if hermes_lite { 38_400_000.0 } else { 61_440_000.0 };
     let gains = if has_lna {
-        vec![sdroxide_types::GainElement::db(
-            sdroxide_hpsdr::LNA_GAIN_ELEMENT,
-            sdroxide_types::Direction::Rx,
-            sdroxide_hpsdr::LNA_GAIN_MIN_DB,
-            sdroxide_hpsdr::LNA_GAIN_MAX_DB,
+        vec![sdro_types::GainElement::db(
+            sdro_hpsdr::LNA_GAIN_ELEMENT,
+            sdro_types::Direction::Rx,
+            sdro_hpsdr::LNA_GAIN_MIN_DB,
+            sdro_hpsdr::LNA_GAIN_MAX_DB,
             1.0,
         )]
     } else {
@@ -1735,7 +1735,7 @@ fn hpsdr_caps(board: &str, sample_rate: f64, protocol: u8, has_lna: bool, ddc: u
         } else {
             Vec::new()
         },
-        sample_rates: sdroxide_types::HpsdrConfig::rates_for(protocol).to_vec(),
+        sample_rates: sdro_types::HpsdrConfig::rates_for(protocol).to_vec(),
         gains,
         ..DeviceCaps::default()
     }
@@ -1785,9 +1785,9 @@ fn open_rx888_source(
 /// on the host. And the frequency range is two ranges, not one: direct sampling
 /// up to the ADC's Nyquist limit, then the R828D tuner above it. On a slow ADC
 /// clock the two do not meet, and the gap is published rather than papered over
-/// — see `sdroxide_rx888::band::freq_ranges`.
+/// — see `sdro_rx888::band::freq_ranges`.
 fn rx888_caps(src: &rx888_source::Rx888Source) -> DeviceCaps {
-    use sdroxide_types::{Direction, GainElement, Rx888Config};
+    use sdro_types::{Direction, GainElement, Rx888Config};
     let rate = src.sample_rate_hz();
     let mut gains = vec![
         // The AD8370's vernier is linear in voltage, so the dB step
@@ -1851,7 +1851,7 @@ fn open_airspyhf_source(
 /// that are deliberately not listed here, so only the Airspy HF+ settings panel
 /// renders them.
 fn airspyhf_caps(src: &airspyhf_source::AirspyHfSource) -> DeviceCaps {
-    use sdroxide_types::{AirspyHfConfig, Direction, GainElement};
+    use sdro_types::{AirspyHfConfig, Direction, GainElement};
     let (att_max_db, att_step_db) = src.attenuator_range_db();
     DeviceCaps {
         driver: "airspyhf".into(),
@@ -1910,7 +1910,7 @@ fn open_elad_source(
 /// transmission, where the other way round costs a panadapter painting the
 /// station's own transmitter.
 fn elad_caps(src: &elad_source::EladSource) -> DeviceCaps {
-    use sdroxide_types::{Direction, EladConfig, GainElement};
+    use sdro_types::{Direction, EladConfig, GainElement};
     let model = src.model();
     let tx = src.can_transmit();
     DeviceCaps {
@@ -1928,16 +1928,16 @@ fn elad_caps(src: &elad_source::EladSource) -> DeviceCaps {
         // The rate is not commandable, so this list is what the stream may be
         // read as rather than what the device can be told to do. See
         // `EladConfig::sample_rate_hz`.
-        sample_rates: sdroxide_types::ELAD_SAMPLE_RATES.iter().map(|&r| r as f64).collect(),
+        sample_rates: sdro_types::ELAD_SAMPLE_RATES.iter().map(|&r| r as f64).collect(),
         // One real gain: the input pad, in or out. The pre-selection filter
         // switch is a pseudo-element and deliberately absent, so only this
         // backend's own settings tab draws it.
         gains: vec![GainElement::db(
             EladConfig::ATT_ELEMENT,
             Direction::Rx,
-            -sdroxide_types::ELAD_ATTENUATOR_DB,
+            -sdro_types::ELAD_ATTENUATOR_DB,
             0.0,
-            sdroxide_types::ELAD_ATTENUATOR_DB,
+            sdro_types::ELAD_ATTENUATOR_DB,
         )],
         // The transceiver's two antenna sockets, on either control path — the
         // rig's `AN` command. Receive only, because that is all `AN` moves: it
@@ -1946,7 +1946,7 @@ fn elad_caps(src: &elad_source::EladSource) -> DeviceCaps {
         // one input and no way to be told anything, so it lists nothing and the
         // control never appears.
         antennas_rx: if src.switches_antenna() {
-            sdroxide_types::EladAntenna::names()
+            sdro_types::EladAntenna::names()
         } else {
             Vec::new()
         },
@@ -1983,7 +1983,7 @@ fn open_airspy_source(
 /// ride pseudo-elements that are deliberately not listed here, so only the
 /// Airspy panel renders them.
 fn airspy_caps(src: &airspy_source::AirspySource) -> DeviceCaps {
-    use sdroxide_types::{AirspyConfig, Direction, GainElement};
+    use sdro_types::{AirspyConfig, Direction, GainElement};
     DeviceCaps {
         driver: "airspy".into(),
         label: src.describe(),
@@ -2036,7 +2036,7 @@ fn open_hydrasdr_source(
 /// DC blocker) ride pseudo-elements that are deliberately not listed here, so
 /// only the HydraSDR panel renders them.
 fn hydrasdr_caps(src: &hydrasdr_source::HydraSdrSource) -> DeviceCaps {
-    use sdroxide_types::{Direction, GainElement, HydraSdrConfig};
+    use sdro_types::{Direction, GainElement, HydraSdrConfig};
     DeviceCaps {
         driver: "hydrasdr".into(),
         label: src.describe(),
@@ -2077,7 +2077,7 @@ fn open_fobos_source(
 /// 5.4 GHz, from `libfobos`'s header comment on the low-level chip-tuning
 /// call this backend never makes directly) — the chip's bound, not a
 /// measured receiver-wide figure, so treated as approximate rather than
-/// pinned. **Partially confirmed live**: sdroxide's own default startup
+/// pinned. **Partially confirmed live**: sdro's own default startup
 /// frequency (14.2 MHz, nothing to do with this backend) landed below this
 /// floor on a real run, and `fobos_rx_set_frequency` genuinely refused it
 /// (`FOBOS_ERR_UNSUPPORTED`) rather than silently mistuning — consistent
@@ -2087,8 +2087,8 @@ fn open_fobos_source(
 /// against) rather than a constant.
 ///
 /// The **sample rates come off the device** on `Rf`; the HF ports don't have
-/// a comparable discrete list (`sdroxide_dsp::WbDdc` snaps to the nearest
-/// power-of-two bin count instead — see `sdroxide-fobos::stream::pick_bins`),
+/// a comparable discrete list (`sdro_dsp::WbDdc` snaps to the nearest
+/// power-of-two bin count instead — see `sdro-fobos::stream::pick_bins`),
 /// so the same device-reported list is offered there too as reasonable
 /// targets, understanding the achieved rate can differ.
 ///
@@ -2098,17 +2098,17 @@ fn open_fobos_source(
 /// pseudo-elements that are deliberately not listed here: the clock switch
 /// so only the Fobos panel renders it, the diversity ones because
 /// `diversity: true` below is what puts them on the main window's own
-/// shared DIV strip instead (`sdroxide_types::DIV_MODE_ELEMENT`'s own doc
+/// shared DIV strip instead (`sdro_types::DIV_MODE_ELEMENT`'s own doc
 /// comment).
 fn fobos_caps(src: &fobos_source::FobosSource, port: FobosPort) -> DeviceCaps {
-    use sdroxide_types::{Direction, FobosConfig, GainElement};
+    use sdro_types::{Direction, FobosConfig, GainElement};
     let rates = src.model_rates().to_vec();
     let freq_range = match port {
         FobosPort::Rf => (25_000_000.0, 5_400_000_000.0),
         // The full Nyquist span the wideband stream actually carries, not
         // just the narrower set of frequencies the downconverter's own
-        // centre can land on (see sdroxide_dsp::reachable_range_hz's own
-        // doc comment) — the same convention sdroxide-rx888's own
+        // centre can land on (see sdro_dsp::reachable_range_hz's own
+        // doc comment) — the same convention sdro-rx888's own
         // freq_ranges uses for the identical WbDdc clamp. A dial anywhere
         // in this range is genuinely receivable without a retune as long as
         // it stays inside the current span; only a request that would need
@@ -2190,7 +2190,7 @@ fn open_hackrf_source(
 /// DC – 7.25 GHz on every HackRF, matching libhackrf and SoapyHackRF. A HackRF
 /// is deaf below 1 MHz and above 6 GHz, but it does tune there and people do
 /// use it there, so the range that reaches the dial is the one the radio will
-/// accept. See `sdroxide_hackrf::protocol::TUNING_RANGE_HZ`.
+/// accept. See `sdro_hackrf::protocol::TUNING_RANGE_HZ`.
 ///
 /// Three real gain elements, LNA first: `gains[0]` is what the main window's
 /// Gain slider reaches, and the LNA is the stage that actually changes
@@ -2198,7 +2198,7 @@ fn open_hackrf_source(
 /// filter, ppm and the host-side IQ correction — ride pseudo-elements that are
 /// deliberately absent here, so only the HackRF settings panel renders them.
 fn hackrf_caps(src: &hackrf_source::HackRfSource) -> DeviceCaps {
-    use sdroxide_types::{Direction, GainElement, HackRfConfig};
+    use sdro_types::{Direction, GainElement, HackRfConfig};
     let range = src.freq_range();
     let tx = src.tx_enabled();
     let mut gains = vec![
@@ -2270,7 +2270,7 @@ fn open_lime_source(
 /// or predistortion loop — rides pseudo-elements that are deliberately absent
 /// here, so only this backend's own settings panel renders them.
 fn lime_caps(src: &lime_source::LimeSource) -> DeviceCaps {
-    use sdroxide_types::{Direction, GainElement, LimeConfig};
+    use sdro_types::{Direction, GainElement, LimeConfig};
     let tx = src.tx_enabled();
     let mut gains = vec![
         // LimeSuite takes an unsigned number of decibels; anything finer is
@@ -2332,7 +2332,7 @@ fn open_sdrplay_source(
 /// pseudo-elements that are deliberately not listed here, so only the SDRplay
 /// settings panel renders them.
 fn sdrplay_caps(src: &sdrplay_source::SdrPlaySource) -> DeviceCaps {
-    use sdroxide_types::SdrPlayConfig;
+    use sdro_types::SdrPlayConfig;
     DeviceCaps {
         driver: "sdrplay".into(),
         label: src.describe(),
@@ -2361,7 +2361,7 @@ fn sdrplay_caps(src: &sdrplay_source::SdrPlaySource) -> DeviceCaps {
 
 /// Build the PlutoSDR source from radio.json. The address is the operator's
 /// typed one, else a persisted discovery selection, else the USB gadget's
-/// default — see [`sdroxide_types::PlutoConfig::target`].
+/// default — see [`sdro_types::PlutoConfig::target`].
 ///
 /// `rate_override` is `--rate`, which for this backend takes precedence over
 /// the configured rate: on a headless install the command line is the part of
@@ -2407,7 +2407,7 @@ fn open_pluto_source(
 /// and `PlutoConfig::full_duplex` — set by whoever can see the network the
 /// radio is on — lifts it.
 fn pluto_caps(src: &pluto_source::PlutoSource, rx: u8) -> DeviceCaps {
-    use sdroxide_types::{Direction, GainElement, PlutoConfig};
+    use sdro_types::{Direction, GainElement, PlutoConfig};
     let Some(limits) = src.limits() else {
         return DeviceCaps { driver: "pluto".into(), label: src.describe(), ..Default::default() };
     };
@@ -2462,7 +2462,7 @@ fn pluto_caps(src: &pluto_source::PlutoSource, rx: u8) -> DeviceCaps {
 /// else reaches HF only by sampling the ADC directly, which is good for
 /// everything below the ADC's own clock — the first Nyquist zone up to
 /// 14.4 MHz, and its second zone above that, which the DDC's frequency word
-/// wraps into on its own. See `sdroxide_rtlsdr::DIRECT_SAMPLING_TOP_HZ`.
+/// wraps into on its own. See `sdro_rtlsdr::DIRECT_SAMPLING_TOP_HZ`.
 ///
 /// That upper half is what this used to stop short of, and stopping short of it
 /// greyed out 17 m and 15 m — the two bands with nowhere else to go, above the
@@ -2473,11 +2473,11 @@ fn pluto_caps(src: &pluto_source::PlutoSource, rx: u8) -> DeviceCaps {
 /// Split out from [`rtlsdr_caps`] so the front ends can be checked without a
 /// dongle on the bus.
 fn rtlsdr_rx_ranges(is_blog_v4: bool, hf_capable: bool) -> Vec<(f64, f64)> {
-    let tuner = (sdroxide_rtlsdr::TUNER_MIN_HZ, sdroxide_rtlsdr::TUNER_MAX_HZ);
+    let tuner = (sdro_rtlsdr::TUNER_MIN_HZ, sdro_rtlsdr::TUNER_MAX_HZ);
     if is_blog_v4 {
-        vec![(0.0, sdroxide_rtlsdr::TUNER_MAX_HZ)]
+        vec![(0.0, sdro_rtlsdr::TUNER_MAX_HZ)]
     } else if hf_capable {
-        vec![(0.0, sdroxide_rtlsdr::DIRECT_SAMPLING_TOP_HZ), tuner]
+        vec![(0.0, sdro_rtlsdr::DIRECT_SAMPLING_TOP_HZ), tuner]
     } else {
         vec![tuner]
     }
@@ -2500,15 +2500,15 @@ fn rtlsdr_caps(src: &rtlsdr_source::RtlSdrSource, driver: &str) -> DeviceCaps {
         tx_channels: 0,
         audio_mode: false,
         freq_ranges_rx,
-        sample_rates: sdroxide_types::RtlSdrConfig::SAMPLE_RATES.to_vec(),
+        sample_rates: sdro_types::RtlSdrConfig::SAMPLE_RATES.to_vec(),
         gains: vec![
             // The hardware only has 29 discrete steps; a request is snapped to
             // the nearest and reported back, so a fine slider is honest enough.
-            sdroxide_types::GainElement::db(
-                sdroxide_types::RtlSdrConfig::TUNER_GAIN_ELEMENT,
-                sdroxide_types::Direction::Rx,
+            sdro_types::GainElement::db(
+                sdro_types::RtlSdrConfig::TUNER_GAIN_ELEMENT,
+                sdro_types::Direction::Rx,
                 0.0,
-                sdroxide_types::RtlSdrConfig::GAIN_MAX_DB,
+                sdro_types::RtlSdrConfig::GAIN_MAX_DB,
                 0.1,
             ),
         ],
@@ -2572,9 +2572,9 @@ fn spyserver_caps(src: &spyserver_source::SpyServerSource, driver: &str) -> Devi
             // SDRplay backend's LNA state is. What an index means depends on
             // the receiver and on the band, so no dB mapping is invented and
             // the element says it is counted in steps.
-            sdroxide_types::GainElement::steps(
-                sdroxide_types::SpyServerConfig::GAIN_ELEMENT,
-                sdroxide_types::Direction::Rx,
+            sdro_types::GainElement::steps(
+                sdro_types::SpyServerConfig::GAIN_ELEMENT,
+                sdro_types::Direction::Rx,
                 0.0,
                 f64::from(info.maximum_gain_index),
                 1.0,
@@ -2608,7 +2608,7 @@ fn open_kiwisdr_source(
     // crate, which has no business reading the station configuration — and it
     // is the station callsign rather than the radio's, because it is the
     // operator the receiver's owner sees.
-    let ident = radio.kiwi.ident_or(&sdroxide_config::load_digi_config().my_call);
+    let ident = radio.kiwi.ident_or(&sdro_config::load_digi_config().my_call);
     let src = kiwisdr_source::KiwiSdrSource::connect(&radio.kiwi, &ident, center_hz)
         .with_context(|| format!("connecting to the KiwiSDR at {}", radio.kiwi.endpoint()))?;
     let caps = kiwisdr_caps(&src);
@@ -2642,9 +2642,9 @@ fn kiwisdr_caps(src: &kiwisdr_source::KiwiSdrSource) -> DeviceCaps {
         gains: vec![
             // A switch riding a gain element, so its two values are 0 and 1
             // — which are not decibels either.
-            sdroxide_types::GainElement::steps(
-                sdroxide_types::KiwiConfig::AGC_ELEMENT,
-                sdroxide_types::Direction::Rx,
+            sdro_types::GainElement::steps(
+                sdro_types::KiwiConfig::AGC_ELEMENT,
+                sdro_types::Direction::Rx,
                 0.0,
                 1.0,
                 1.0,
@@ -2653,9 +2653,9 @@ fn kiwisdr_caps(src: &kiwisdr_source::KiwiSdrSource) -> DeviceCaps {
             // `GainElement` has no other - the same thing the SpyServer's gain
             // index and the SDRplay's LNA state are, and counted in steps for
             // the same reason.
-            sdroxide_types::GainElement::steps(
-                sdroxide_types::KiwiConfig::MAN_GAIN_ELEMENT,
-                sdroxide_types::Direction::Rx,
+            sdro_types::GainElement::steps(
+                sdro_types::KiwiConfig::MAN_GAIN_ELEMENT,
+                sdro_types::Direction::Rx,
                 0.0,
                 90.0,
                 1.0,
@@ -2715,7 +2715,7 @@ fn tci_caps(address: &str, iq_rate: f64, rx: u32) -> DeviceCaps {
         } else {
             Vec::new()
         },
-        sample_rates: sdroxide_types::TciConfig::IQ_RATES.to_vec(),
+        sample_rates: sdro_types::TciConfig::IQ_RATES.to_vec(),
         // No RX gains: the SunSDR2DX ATT/Preamp is not reachable over TCI
         // (verified against ExpertSDR3 — no command spelling drives it, and
         // toggling it in the GUI emits nothing on the wire). TCI gain control
@@ -2751,7 +2751,7 @@ fn open_icomnet_source(radio: &RadioConfig) -> anyhow::Result<(Box<dyn IqSource>
 /// dial held to their radio's real coverage can state it in Settings — which is
 /// what `freq_ranges_rx` is for.
 fn icomnet_caps(cfg: &IcomNetConfig, src: &icomnet_source::IcomNetSource) -> DeviceCaps {
-    let audio_mode = cfg.effective_rx_source() == sdroxide_types::IcomRxSource::Af;
+    let audio_mode = cfg.effective_rx_source() == sdro_types::IcomRxSource::Af;
     let tx = src.can_transmit();
     DeviceCaps {
         driver: "icomnet".into(),
@@ -2817,7 +2817,7 @@ fn smartsdr_caps(model: &str, label: String) -> DeviceCaps {
         // Every FLEX has a directional coupler and reports SWR on its `SWR`
         // meter, which the backend passes on while it is on the air.
         has_swr_sensor: true,
-        sample_rates: sdroxide_types::SmartSdrConfig::IQ_RATES.to_vec(),
+        sample_rates: sdro_types::SmartSdrConfig::IQ_RATES.to_vec(),
         // No RX gain elements: a FLEX has no user-settable front-end gain in the
         // sense this list means. Its `display pan rfgain` is a per-panadapter
         // preamp/attenuator whose steps differ by model and are only discoverable
@@ -2843,11 +2843,11 @@ fn smartsdr_caps(model: &str, label: String) -> DeviceCaps {
 /// greyed out the 70 cm button on a rig that has the band, and a 54 MHz
 /// transmit ceiling refused to key a 2 m rig that was hearing the band
 /// perfectly well. What holds a licensed operator in bounds is the
-/// amateur-band gate — region-aware, and 3 cm is the highest band sdroxide's
+/// amateur-band gate — region-aware, and 3 cm is the highest band sdro's
 /// table knows — plus the rig's own refusal. An operator who wants a firmer
 /// limit than that can state one in Settings.
 fn cat_caps(radio: &RadioConfig) -> DeviceCaps {
-    let demod = matches!(radio.cat.format, sdroxide_types::SoundFormat::DemodAudio);
+    let demod = matches!(radio.cat.format, sdro_types::SoundFormat::DemodAudio);
     DeviceCaps {
         driver: "cat".into(),
         label: format!("{} (CAT)", radio.cat.family.label()),
@@ -2919,7 +2919,7 @@ mod tests {
     }
 
     fn cli(oob: bool) -> Cli {
-        let mut c = Cli::parse_from(["sdroxide"]);
+        let mut c = Cli::parse_from(["sdro"]);
         c.oob_tx = oob;
         c
     }
@@ -2942,7 +2942,7 @@ mod tests {
 
     #[test]
     fn hl2_transverter_tx_uses_the_hardware_bandwidth_not_the_ten_meter_band_edge() {
-        use sdroxide_radio::{ConverterPlan, ConverterStep, plan_caps};
+        use sdro_radio::{ConverterPlan, ConverterStep, plan_caps};
 
         let caps = hpsdr_caps("Hermes-Lite 2", 192_000.0, 1, true, 0);
         assert!(caps.may_tx_hz(30_220_000.0));
@@ -2966,13 +2966,13 @@ mod tests {
     /// The flag is opt-in on the command line and nowhere else.
     #[test]
     fn the_flag_is_off_unless_asked_for() {
-        assert!(!Cli::parse_from(["sdroxide"]).oob_tx);
-        assert!(Cli::parse_from(["sdroxide", "--oob-tx"]).oob_tx);
+        assert!(!Cli::parse_from(["sdro"]).oob_tx);
+        assert!(Cli::parse_from(["sdro", "--oob-tx"]).oob_tx);
         assert!(Settings::default().tx_ham_only, "the shipped default is locked");
     }
 
     /// A SunSDR2 DX hears 2 m and transmits on it, and it took an override in
-    /// Settings to make sdroxide agree — the published transmit envelope
+    /// Settings to make sdro agree — the published transmit envelope
     /// stopped at 6 m. Both halves of the band matter: the HF/6 m block is what
     /// every TCI rig has, and 2 m is what the VHF ones add.
     #[test]
@@ -3016,7 +3016,7 @@ mod tests {
     /// `tx_write`, and the over died with "device is not transmit capable".
     #[test]
     fn a_cat_rig_transmits_audio_in_either_sound_format() {
-        use sdroxide_types::SoundFormat;
+        use sdro_types::SoundFormat;
         for format in [SoundFormat::DemodAudio, SoundFormat::Iq] {
             let mut radio = RadioConfig::default();
             radio.cat.format = format;
@@ -3085,18 +3085,18 @@ mod tests {
         assert!(tuner_only.may_rx_hz(28_074_000.0), "10 m is the tuner's own");
     }
 
-    fn session(freq_hz: f64, mode: sdroxide_types::Mode) -> sdroxide_config::Session {
-        sdroxide_config::Session { freq_hz, mode, ..Default::default() }
+    fn session(freq_hz: f64, mode: sdro_types::Mode) -> sdro_config::Session {
+        sdro_config::Session { freq_hz, mode, ..Default::default() }
     }
 
     /// Starting with no arguments is the case this exists for: come back up on
     /// the frequency and mode the radio was left on, not on a fixed default.
     #[test]
     fn a_bare_start_comes_up_where_the_last_session_ended() {
-        let mut c = Cli::parse_from(["sdroxide"]);
-        let mode = c.apply_session(session(7_074_000.0, sdroxide_types::Mode::Ft8));
+        let mut c = Cli::parse_from(["sdro"]);
+        let mode = c.apply_session(session(7_074_000.0, sdro_types::Mode::Ft8));
         assert_eq!(c.center_hz(), 7_074_000.0);
-        assert_eq!(mode, Some(sdroxide_types::Mode::Ft8));
+        assert_eq!(mode, Some(sdro_types::Mode::Ft8));
         assert_eq!(c.mode, mode, "the engine and the source agree on the mode");
     }
 
@@ -3104,12 +3104,12 @@ mod tests {
     /// opened on the dial that was actually being listened to, not on A's.
     #[test]
     fn a_start_on_vfo_b_opens_on_bs_dial() {
-        let left_on_b = sdroxide_config::Session {
+        let left_on_b = sdro_config::Session {
             vfo_b_hz: Some(7_100_000.0),
-            active_vfo: sdroxide_types::Vfo::B,
-            ..session(14_200_000.0, sdroxide_types::Mode::Usb)
+            active_vfo: sdro_types::Vfo::B,
+            ..session(14_200_000.0, sdro_types::Mode::Usb)
         };
-        let mut c = Cli::parse_from(["sdroxide"]);
+        let mut c = Cli::parse_from(["sdro"]);
         c.apply_session(left_on_b);
         assert_eq!(c.center_hz(), 7_100_000.0);
     }
@@ -3118,21 +3118,21 @@ mod tests {
     /// survive the restore, and only what it left out may be filled in.
     #[test]
     fn the_command_line_outranks_the_remembered_session() {
-        let mut both = Cli::parse_from(["sdroxide", "--freq", "50150000", "--mode", "cw"]);
-        both.apply_session(session(7_074_000.0, sdroxide_types::Mode::Ft8));
+        let mut both = Cli::parse_from(["sdro", "--freq", "50150000", "--mode", "cw"]);
+        both.apply_session(session(7_074_000.0, sdro_types::Mode::Ft8));
         assert_eq!(both.center_hz(), 50_150_000.0);
-        assert_eq!(both.mode, Some(sdroxide_types::Mode::Cw));
+        assert_eq!(both.mode, Some(sdro_types::Mode::Cw));
 
         // Each half is independent — naming one must not discard the other.
-        let mut freq_only = Cli::parse_from(["sdroxide", "--freq", "50150000"]);
-        freq_only.apply_session(session(7_074_000.0, sdroxide_types::Mode::Ft8));
+        let mut freq_only = Cli::parse_from(["sdro", "--freq", "50150000"]);
+        freq_only.apply_session(session(7_074_000.0, sdro_types::Mode::Ft8));
         assert_eq!(freq_only.center_hz(), 50_150_000.0);
-        assert_eq!(freq_only.mode, Some(sdroxide_types::Mode::Ft8), "the mode is still restored");
+        assert_eq!(freq_only.mode, Some(sdro_types::Mode::Ft8), "the mode is still restored");
 
-        let mut mode_only = Cli::parse_from(["sdroxide", "--mode", "cw"]);
-        mode_only.apply_session(session(7_074_000.0, sdroxide_types::Mode::Ft8));
+        let mut mode_only = Cli::parse_from(["sdro", "--mode", "cw"]);
+        mode_only.apply_session(session(7_074_000.0, sdro_types::Mode::Ft8));
         assert_eq!(mode_only.center_hz(), 7_074_000.0, "the frequency is still restored");
-        assert_eq!(mode_only.mode, Some(sdroxide_types::Mode::Cw));
+        assert_eq!(mode_only.mode, Some(sdro_types::Mode::Cw));
     }
 
     /// A run that never restores anything — the headless smoke tests — still
@@ -3144,7 +3144,7 @@ mod tests {
     /// in this binary reads a config file.
     #[test]
     fn the_switch_decides_what_the_interface_factory_opens() {
-        let root = std::env::temp_dir().join(format!("sdroxide-power-test-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("sdro-power-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(root.join("radio-1")).expect("scratch dir");
         std::fs::write(
@@ -3157,10 +3157,10 @@ mod tests {
         std::fs::write(root.join("radio-1/radio.json"), r#"{"backend":"None"}"#).unwrap();
         // SAFETY: single-threaded within this test; no other test in this
         // binary reads the variable.
-        unsafe { std::env::set_var("SDROXIDE_CONFIG_DIR", &root) };
+        unsafe { std::env::set_var("SDRO_CONFIG_DIR", &root) };
 
-        let cli = secondary_cli(&Cli::parse_from(["sdroxide"]));
-        let mut factory = reopen_factory_for(&cli, sdroxide_config::Store::radio(1), 1);
+        let cli = secondary_cli(&Cli::parse_from(["sdro"]));
+        let mut factory = reopen_factory_for(&cli, sdro_config::Store::radio(1), 1);
 
         // Switched off: an answer, not a refusal — a refusal would leave the
         // engine holding whatever it already had open — and one that has
@@ -3172,7 +3172,7 @@ mod tests {
         // Switched on with nothing there to open: the ordinary reconnecting
         // stand-in, never a refusal, or the engine would sit for ever on the
         // stand-in above — which does not retry.
-        sdroxide_config::set_radio_enabled(1, true).unwrap();
+        sdro_config::set_radio_enabled(1, true).unwrap();
         let (source, caps) = factory(14_200_000.0).expect("switching on must not leave a corpse");
         assert_eq!(caps.label, "No radio");
         assert!(source.needs_reopen(), "the engine has to keep trying from here");
@@ -3181,13 +3181,13 @@ mod tests {
         // is reported as one, leaving whatever is running running.
         assert!(factory(14_200_000.0).is_err(), "no longer coming back from off");
 
-        unsafe { std::env::remove_var("SDROXIDE_CONFIG_DIR") };
+        unsafe { std::env::remove_var("SDRO_CONFIG_DIR") };
         let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]
     fn a_run_that_skips_the_restore_keeps_the_old_default() {
-        assert_eq!(Cli::parse_from(["sdroxide"]).center_hz(), 14_200_000.0);
-        assert_eq!(Cli::parse_from(["sdroxide", "--freq", "50150000"]).center_hz(), 50_150_000.0);
+        assert_eq!(Cli::parse_from(["sdro"]).center_hz(), 14_200_000.0);
+        assert_eq!(Cli::parse_from(["sdro", "--freq", "50150000"]).center_hz(), 50_150_000.0);
     }
 }

@@ -3,7 +3,7 @@
 `vendor/dream` is a source subset of the **Dream** AM/DRM receiver, the
 long-running open-source Digital Radio Mondiale implementation begun at
 Technische Universität Darmstadt. It is built into a static library by
-`crates/sdroxide-drm`, which wraps it behind a small C API.
+`crates/sdro-drm`, which wraps it behind a small C API.
 
 | | |
 |---|---|
@@ -26,7 +26,7 @@ built.
 
 ## What this links against
 
-`crates/sdroxide-drm` also builds **faad2** (`vendor/faad2`, a git submodule
+`crates/sdro-drm` also builds **faad2** (`vendor/faad2`, a git submodule
 pinned to `2.11.2`, GPL-2.0-or-later) with `DRM_SUPPORT`, and links it directly.
 Dream normally `dlopen`s a `libfaad_drm` at runtime instead, which most systems
 do not have — leaving a receiver that acquires the signal, reads the service
@@ -55,14 +55,14 @@ and the `fdk_aac_codec.cpp` entry below.
 
 Eighteen files, and no upstream line is edited except as described. Five of
 them are there because Dream was written for one receiver on one thread and
-sdroxide runs one per radio, on a thread each, fed by whatever a shortwave
+sdro runs one per radio, on a thread each, fed by whatever a shortwave
 broadcast happens to contain.
 
-**`src/sound/sound.h`** — one added branch. Under `USE_SDROXIDE_SOUND` the
+**`src/sound/sound.h`** — one added branch. Under `USE_SDRO_SOUND` the
 `CSoundIn`/`CSoundOut` typedefs resolve to the ring-buffer shims in
-`crates/sdroxide-drm/include/sdrx_sound.h` instead of a sound card, and the two
+`crates/sdro-drm/include/sdrx_sound.h` instead of a sound card, and the two
 fallback conditions (the null interface, and the Windows mmsystem branch) are
-guarded so they no longer win. sdroxide feeds the decoder samples from its own
+guarded so they no longer win. sdro feeds the decoder samples from its own
 receive chain, so there is no sound card in this picture at all.
 
 **`src/sourcedecoders/aac_codec.cpp`** — two changes.
@@ -76,14 +76,14 @@ receive chain, so there is no sound card in this picture at all.
    segfaults within seconds of acquiring any real broadcast. It now takes the
    length faad2 reports, bounded by the destination, zero-fills any remainder,
    and returns a proper `EDecError`. This is why upstream Dream 2.2 crashes
-   against a current faad2, and the fix is not sdroxide-specific.
-2. Under `SDROXIDE_NO_AAC_ENCODER`, the constructor no longer `dlopen`s a FAAC
-   *encoder*. sdroxide never transmits DRM, and the probe only produced a
+   against a current faad2, and the fix is not sdro-specific.
+2. Under `SDRO_NO_AAC_ENCODER`, the constructor no longer `dlopen`s a FAAC
+   *encoder*. sdro never transmits DRM, and the probe only produced a
    failure message on stderr.
 
-**`src/sourcedecoders/opus_codec.cpp`** — under `SDROXIDE_QUIET`, the two
+**`src/sourcedecoders/opus_codec.cpp`** — under `SDRO_QUIET`, the two
 messages announcing whether libopus was found are not printed. A library has no
-business writing to stderr in a GUI application; sdroxide logs through
+business writing to stderr in a GUI application; sdro logs through
 `tracing`.
 
 **`src/DrmReceiver.cpp`** — one removed `cerr` line that printed every
@@ -137,7 +137,7 @@ checks: a station carrying a slideshow or an EPG runs thousands of lines that a
 plain audio-only station never touches, which is exactly the shape of "it works
 on most stations and kills the radio on one".
 
-**`src/datadecoding/DataDecoder.cpp`** — under `SDROXIDE_NO_DATA_FILES`, a
+**`src/datadecoding/DataDecoder.cpp`** — under `SDRO_NO_DATA_FILES`, a
 decoded EPG object is no longer written out, and the `fwrite` of an empty
 object's `front()` is guarded.
 
@@ -145,7 +145,7 @@ This was the only place in the whole receiver that touched the filesystem, and
 it took the filename from the broadcast. With the data directory set to `"."`
 — which is what the shim asks for — a station carrying an EPG would create
 `./EPG/…` in whatever the host's working directory happened to be, under a
-name the transmission chose. sdroxide surfaces no EPG, so there was nothing to
+name the transmission chose. sdro surfaces no EPG, so there was nothing to
 write in the first place.
 
 **`src/datadecoding/journaline/NML.cpp`** — `#include <zlib.h>` made
@@ -159,7 +159,7 @@ This is the only thing in the tree that wanted a system library nothing else
 here needs. It built anywhere `zlib.h` happened to be installed, which included
 every developer machine and the GitHub runner images, and failed on a clean
 distribution container; the symbols then resolved only because some unrelated
-dependency had pulled `-lz` onto the link line. sdroxide surfaces no Journaline
+dependency had pulled `-lz` onto the link line. sdro surfaces no Journaline
 at all, so the whole question is moot for this build — but it is exactly the
 kind of accidental dependency that shows up first in somebody else's release.
 
@@ -186,7 +186,7 @@ SDC-supplied frame length without checking the sign. `init()` also fixes an
 upstream bug of its own: `audioParam.AM_MONO ? 1 : 2` tests the *enumerator
 constant*, never the field, so `numChannels` was always the same value whatever
 the broadcast said.
-`crates/sdroxide-drm/src/decoder_tests.rs` fuzzes both parsers through
+`crates/sdro-drm/src/decoder_tests.rs` fuzzes both parsers through
 `sdrx_drm_test_parse_superframe` and keeps the three super frames that used to
 crash, by name.
 
@@ -269,10 +269,10 @@ licence cannot be combined with this project's — see
 found, so an xHE-AAC service degrades to Dream's null codec exactly as an Opus
 service does without libopus.
 
-*Decoder only*: `SDROXIDE_NO_AAC_ENCODER` removes the include of
+*Decoder only*: `SDRO_NO_AAC_ENCODER` removes the include of
 `aacenc_lib.h`, the `hEncoder` member and the bodies of all six encoder
 methods, which become inert stubs because `CAudioCodec` declares them pure
-virtual. sdroxide never transmits DRM; DRM is a broadcast system with no
+virtual. sdro never transmits DRM; DRM is a broadcast system with no
 amateur allocation.
 
 *Restricted to xHE-AAC*, and this one is not cosmetic. `InitCodecList` puts
@@ -308,5 +308,5 @@ handle it is about to replace, and prefers `CStreamInfo::sampleRate` — the rat
 of the PCM the decoder actually returns, and the field that goes with the
 `frameSize` the copy uses — over `extSamplingRate`, an ASC field which for USAC
 is often zero and which sent the resampler ratio wrong without saying so.
-Finally, under `SDROXIDE_QUIET` the file's `cerr` goes to a null sink: it
+Finally, under `SDRO_QUIET` the file's `cerr` goes to a null sink: it
 narrates every decode, and on a fading signal a line per frame.

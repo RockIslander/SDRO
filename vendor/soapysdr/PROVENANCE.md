@@ -36,9 +36,9 @@ enumeration call, and the raw `*mut SoapySDRDevice` it needs is private to
 
 The consequence is not cosmetic. Without it a host can only set a setting whose
 name it has hard-coded — which is exactly the device-specific branching that
-choosing SoapySDR is supposed to avoid. sdroxide's SoapySDR settings panel is
+choosing SoapySDR is supposed to avoid. sdro's SoapySDR settings panel is
 built on the enumeration, so every driver's own controls appear without
-sdroxide knowing anything about that driver.
+sdro knowing anything about that driver.
 
 `setting_info` is the same shape as upstream's own `stream_args_info` one field
 over: it introduces no new unsafety and no new FFI helper, only a second caller
@@ -49,5 +49,5 @@ trivially reviewable, and to be dropped the moment upstream carries it.
 
 When upstream publishes the method, delete `vendor/soapysdr`, drop the
 `[patch.crates-io]` block and the `exclude` entry from the workspace manifest,
-and raise the `soapysdr` version in `crates/sdroxide-radio/Cargo.toml`. Nothing
+and raise the `soapysdr` version in `crates/sdro-radio/Cargo.toml`. Nothing
 else in the workspace refers to the fork.

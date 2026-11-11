@@ -4,7 +4,7 @@ The amplifier reports its tuner setting only as two step numbers: an inductor st
 
 ## What the window shows
 
-For the HR500 (code: `AmpModel::atu_scale` in `crates/sdroxide-types/src/amp.rs`):
+For the HR500 (code: `AmpModel::atu_scale` in `crates/sdro-types/src/amp.rs`):
 
 - Inductance = 0.05 µH + step × 0.05 µH
 - Capacitance = 10 pF + the sum of the capacitor bits that are on, worth 11, 23.5, 50, 110, 235, 500 and 1100 pF (bit 0 first)
@@ -146,7 +146,7 @@ The path from the input jack to the antenna jack in bypass (relays, low-pass fil
 - The values come from one tune (step 3 / step 12), on one band, into two loads. The floor can't be separated from the per-step size with one point, and the real per-step values aren't exactly linear: the cores' AL varies with frequency and the parts have tolerances.
 - The test is end to end, so the strays (and the cable and T, which sit inside the measured load) are lumped into the result. But the tuner reports only an SWR magnitude, not a phase, so the first test alone fitted a range of floors (about 60 to 180 nH series with 15 to 30 pF shunt). The second test's complex reading narrowed it to about 50 to 60 nH and 50 pF, but it includes the amp's own path, which couldn't be taken out.
 - The strays are not truly fixed: the capacitance across each open relay depends on which bits are off, so the floor shifts a little with the step.
-- The values matter only for display. Nothing in SDRoxide controls the tuner from them.
+- The values matter only for display. Nothing in SDRO controls the tuner from them.
 
 ## How to improve them
 

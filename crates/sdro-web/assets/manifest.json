@@ -1,6 +1,6 @@
 {
   "name": "SDRO",
-  "short_name": "sdro",
+  "short_name": "SDRO",
   "description": "PowerSDR/Thetis-style SDR transceiver, served to the browser",
   "start_url": "./",
   "scope": "./",

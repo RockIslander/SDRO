@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Version=1.1
-Name=sdro
+Name=SDRO
 GenericName=SDR Transceiver
 Comment=Software-defined-radio transceiver with FT8/FT4, SSTV and a web UI
 Exec=sdro

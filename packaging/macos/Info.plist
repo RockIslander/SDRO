@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleName</key>
-    <string>sdro</string>
+    <string>SDRO</string>
     <key>CFBundleDisplayName</key>
-    <string>sdro</string>
+    <string>SDRO</string>
     <key>CFBundleIdentifier</key>
     <string>com.github.dividebysandwich.sdro</string>
     <key>CFBundleExecutable</key>
